@@ -6,83 +6,45 @@ BackLogger is a local-first iOS app for tracking:
 - day-by-day activity lists with unfinished-item carry-over
 - a simple buy list
 
-All user data stays on device. The app now persists data in SQLite and also supports JSON export/import for backup and restore.
-
 ## Features
 
 - Category-based backlog tracking
 - Daily planning with carry-over from the previous day
 - Buy list for quick purchase reminders
-- On-device SQLite persistence
-- JSON backup export
-- JSON backup import
+- Modern SwiftUI navigation and refreshed visual design
+- On-device persistence with `UserDefaults`
+- Automated GitHub Actions build-and-test workflow on pushes to `master`
 
 ## Storage
 
-The app stores its database in the app's `Application Support` folder:
+All app data is stored locally on the device in `UserDefaults`.
 
-- `Backloger/Backloger.sqlite`
-
-Persistence is implemented as a lightweight key-value layer on top of SQLite. Instead of creating many relational tables, the app stores the main app collections as JSON blobs inside one table.
-
-### SQLite schema
-
-```sql
-CREATE TABLE IF NOT EXISTS records (
-    storage_key TEXT PRIMARY KEY,
-    payload BLOB NOT NULL,
-    updated_at REAL NOT NULL
-);
-```
-
-### Stored keys
+Stored keys:
 
 - `backlogList`: all category backlog data
 - `activityBacklogList`: daily activity history and today's list
 - `buyBacklogList`: buy-list items
 
-### How it works
+The app encodes its data with `JSONEncoder` and stores the resulting blobs in `UserDefaults`. There is currently no SQLite database, file export/import flow, sync layer, or backend.
 
-- `storage_key` identifies the logical dataset
-- `payload` contains encoded JSON for that dataset
-- `updated_at` stores the last write timestamp
+If the storage implementation changes in the future, this section should be updated together with the code.
 
-This keeps the storage simple while avoiding `UserDefaults` loss across app rebuilds or reinstalls in the user's workflow.
+## Tests And CI
 
-## JSON backup format
+The repository includes:
 
-The app can export everything into one JSON file and import it later.
+- unit tests in `BacklogerTests/`
+- UI test templates in `BacklogerUITests/`
+- a GitHub Actions workflow at `.github/workflows/ios-ci.yml`
 
-Backup payload structure:
+The workflow builds the app and runs tests on pushes to `master`.
 
-```json
-{
-  "exportedAt": "2026-07-01T02:00:00Z",
-  "backlogList": { "...": "all backlog categories" },
-  "activityBacklogList": { "...": "daily activity history" },
-  "buyItems": [
-    { "...": "buy list item" }
-  ]
-}
-```
+## Future Work
 
-### Included in backup
-
-- all backlog categories
-- all daily activity entries
-- all buy-list items
-- export timestamp
-
-## Migration
-
-Older app data stored in `UserDefaults` is migrated automatically. On first load, if SQLite does not yet contain a dataset but legacy `UserDefaults` data exists, the app imports that data into SQLite and continues using the database from then on.
-
-## Future work
-
-- Cover test
-- Refactor code
-- Add congrats pop-up after completing item or set of items
+- Refactor code further
+- Add a congratulations pop-up after completing an item or set of items
+- Expand test coverage around UI flows if the app grows
 
 ## Demo
 
-![Demo](https://github.com/TheMichelangelo/BackLogger/blob/main/demo.gif)
+![Demo](demo.gif)

@@ -119,6 +119,59 @@ final class StorageAndDayLogicTests: XCTestCase {
         XCTAssertEqual(sqliteOnlyLoaded.bookItems.items.map(\.task), ["Foundation"])
     }
 
+    func testBackupDocumentRoundTripPreservesAllStoredCollections() throws {
+        let backlog = BacklogListAll()
+        backlog.bookItems.items = [BacklogItem(task: "Hyperion")]
+        BacklogListAll.saveToStorage(backlogList: backlog, database: database)
+
+        let activity = ActivityBacklogListAll()
+        activity.days = [DayActivityBacklogList(items: [ActivityBacklogItem(task: "Run")])]
+        ActivityBacklogListAll.saveToStorage(backlogList: activity, database: database)
+
+        BuyListStorage.save([BacklogItem(task: "Headphones")], database: database)
+
+        let document = BacklogBackupTransfer.makeBackupDocument(database: database)
+        let wrapper = try document.fileWrapper(configuration: .init())
+        let restoredData = try XCTUnwrap(wrapper.regularFileContents)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let restoredBackup = try decoder.decode(BacklogBackup.self, from: restoredData)
+
+        XCTAssertEqual(restoredBackup.backlogList.bookItems.items.map(\.task), ["Hyperion"])
+        XCTAssertEqual(restoredBackup.activityBacklogList.days.first?.items.map(\.task), ["Run"])
+        XCTAssertEqual(restoredBackup.buyItems.map(\.task), ["Headphones"])
+    }
+
+    func testImportBackupReplacesPersistedData() {
+        let importedBacklog = BacklogListAll()
+        importedBacklog.comicsItems.items = [BacklogItem(task: "Saga")]
+
+        let importedActivity = ActivityBacklogListAll()
+        importedActivity.days = [DayActivityBacklogList(items: [ActivityBacklogItem(task: "Stretch")])]
+
+        let importedBuyItems = [BacklogItem(task: "Mouse")]
+
+        let document = BacklogBackupDocument(
+            backup: BacklogBackup(
+                backlogList: importedBacklog,
+                activityBacklogList: importedActivity,
+                buyItems: importedBuyItems
+            )
+        )
+
+        BacklogBackupTransfer.importBackup(from: document, database: database)
+
+        XCTAssertEqual(
+            BacklogListAll.loadFromStorage(database: database).comicsItems.items.map(\.task),
+            ["Saga"]
+        )
+        XCTAssertEqual(
+            ActivityBacklogListAll.loadFromStorage(database: database).days.first?.items.map(\.task),
+            ["Stretch"]
+        )
+        XCTAssertEqual(BuyListStorage.load(database: database).map(\.task), ["Mouse"])
+    }
+
     func testDayLogicTodayIndexOpenItemsProgressAndPreviousDays() {
         let calendar = Calendar(identifier: .gregorian)
         let olderDate = Date(timeIntervalSince1970: 100)

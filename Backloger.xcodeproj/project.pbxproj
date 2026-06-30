@@ -23,6 +23,7 @@
 		BE1BF4C32A41CB4D0086B833 /* ExpandableListItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */; };
 		BEC671A32A42425100C056F2 /* ShopListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC671A22A42425100C056F2 /* ShopListView.swift */; };
 		FC0D0F2A2D4A1001000A1B2C /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0D0F292D4A1001000A1B2C /* AppTheme.swift */; };
+		FC1D1A082F10000000A1B2C3 /* BacklogBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1D1A072F10000000A1B2C3 /* BacklogBackup.swift */; };
 		FC1D1A0A2F10000100A1B2C3 /* SQLiteStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */; };
 /* End PBXBuildFile section */
 
@@ -63,6 +64,7 @@
 		BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableListItemView.swift; sourceTree = "<group>"; };
 		BEC671A22A42425100C056F2 /* ShopListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopListView.swift; sourceTree = "<group>"; };
 		FC0D0F292D4A1001000A1B2C /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		FC1D1A072F10000000A1B2C3 /* BacklogBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogBackup.swift; sourceTree = "<group>"; };
 		FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStorage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -122,6 +124,7 @@
 				BE1BF4BB2A40F8CB0086B833 /* DayView.swift */,
 				BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */,
 				FC0D0F292D4A1001000A1B2C /* AppTheme.swift */,
+				FC1D1A072F10000000A1B2C3 /* BacklogBackup.swift */,
 				FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */,
 				BE1BF48F2A3F8A8B0086B833 /* Assets.xcassets */,
 				BE1BF4C02A4113F80086B833 /* logo.png */,
@@ -293,6 +296,7 @@
 				BE1BF4BF2A40FCD80086B833 /* ContentView.swift in Sources */,
 				BE1BF48E2A3F8A8A0086B833 /* MainView.swift in Sources */,
 				BE1BF4BA2A40F38B0086B833 /* BacklogItemStructures.swift in Sources */,
+				FC1D1A082F10000000A1B2C3 /* BacklogBackup.swift in Sources */,
 				FC1D1A0A2F10000100A1B2C3 /* SQLiteStorage.swift in Sources */,
 				BE1BF48C2A3F8A8A0086B833 /* BacklogerApp.swift in Sources */,
 				BE1BF4C32A41CB4D0086B833 /* ExpandableListItemView.swift in Sources */,

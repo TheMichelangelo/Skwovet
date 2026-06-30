@@ -8,7 +8,7 @@ This repository contains `Backloger`, a local-first SwiftUI iOS app for managing
 - daily activity lists with unfinished-item carry-over
 - a lightweight buy list
 
-The app is a personal productivity side project. It keeps everything on-device with `UserDefaults` and does not use a backend, account system, sync layer, or external dependencies.
+The app keeps its data on-device with `UserDefaults`. There is no backend, sync layer, file-based database, or JSON import/export feature in the current codebase.
 
 ## Current Platform Baseline
 
@@ -17,18 +17,17 @@ The app is a personal productivity side project. It keeps everything on-device w
 - language: Swift 5
 - deployment target: `iOS 27.0`
 
-Note: this repo previously targeted `iOS 16.4`; the project file has been updated to `iOS 27.0`.
-
 ## Repo Layout
 
-- `README.md`: short product overview and demo link
-- `agents.md`: contributor and agent guide
+- `README.md`: product-facing overview, storage summary, demo, and CI notes
+- `agent.md`: contributor and coding-agent guide
+- `.github/workflows/ios-ci.yml`: GitHub Actions workflow for build and test on pushes to `master`
 - `.gitignore`: Xcode/macOS ignore rules
 - `Backloger/`: app source
-- `Backloger.xcodeproj/`: Xcode project
-- `BacklogerTests/`: template unit tests
-- `BacklogerUITests/`: template UI tests
-- `demo.gif`, `demo_old.gif`, `demo_old_2.gif`: product demo assets
+- `Backloger.xcodeproj/`: Xcode project and shared scheme
+- `BacklogerTests/`: unit tests
+- `BacklogerUITests/`: UI tests
+- `demo.gif`, `demo_old.gif`, `demo_old_2.gif`: demo assets
 
 ## App Structure
 
@@ -39,46 +38,22 @@ Entry point:
 Shared infrastructure:
 
 - `Backloger/AppTheme.swift`: shared colors, background, card styling, metric pills, empty states, and screen headers
-- `Backloger/BacklogItemStructures.swift`: models, storage keys, category metadata, and persistence helpers
+- `Backloger/BacklogItemStructures.swift`: models, storage keys, persistence helpers, and shared domain logic used by tests
 
 Screens:
 
-- `Backloger/MainView.swift`: modern home screen using `NavigationStack`
+- `Backloger/MainView.swift`: home screen using `NavigationStack`
 - `Backloger/ContentView.swift`: backlog management by category and completion status
 - `Backloger/DayView.swift`: daily planning screen with carry-over behavior and history
 - `Backloger/ShopListView.swift`: buy list
 - `Backloger/ExpandableListItemView.swift`: expandable history card for previous daily lists
 
-## Architecture Notes
+## Persistence
 
-- The app still uses a simple local architecture with SwiftUI views owning most screen state.
-- Persistence remains `UserDefaults` + `JSONEncoder`/`JSONDecoder`.
-- Models are reference types (`class` / `final class`), not structs.
-- There is no separate view model layer yet.
-- Storage has been cleaned up a bit with:
-  - `StorageKey`
-  - `BuyListStorage`
-  - `BacklogListAll.list(for:)`
-  - `ActivityBacklogListAll.preparedForToday()`
+Current storage implementation:
 
-## Data Model Summary
-
-Backlog models:
-
-- `BacklogItem`
-- `BacklogList`
-- `BacklogListAll`
-
-Daily activity models:
-
-- `ActivityBacklogItem`
-- `DayActivityBacklogList`
-- `ActivityBacklogListAll`
-
-Enums:
-
-- `Category`
-- `CompleteCategory`
+- `UserDefaults`
+- `JSONEncoder` / `JSONDecoder`
 
 Storage keys:
 
@@ -86,44 +61,23 @@ Storage keys:
 - `activityBacklogList`
 - `buyBacklogList`
 
-## Recent Modernization
+Rule: any change to persistence or database behavior must also update the `README.md` storage section in the same change.
 
-The UI and framework usage were updated to feel more current:
+This includes:
 
-- replaced old `NavigationView` usage with `NavigationStack`
-- removed the duplicate `MainView` definition that used to live in `ContentView.swift`
-- introduced a shared visual system in `AppTheme.swift`
-- moved screens toward card-based layouts, glass materials, and clearer hierarchy
-- added better empty states and safer progress calculations
-- removed force-unwrapped random selection behavior for empty lists
-- fixed the daily backlog preparation flow so today’s list is derived more intentionally
-- centralized a few repeated storage details
+- moving from `UserDefaults` to a database
+- changing storage keys
+- adding backup/import/export behavior
+- changing the location or format of persisted data
 
-## Remaining Technical Reality
+## Testing And CI
 
-The project is cleaner than before, but it is still a small app with lightweight patterns:
+- Functional logic is covered primarily through XCTest in `BacklogerTests/`
+- Shared logic lives in helper types such as `BacklogLogic`, `DayLogic`, and `BuyListLogic`
+- GitHub Actions workflow lives at `.github/workflows/ios-ci.yml`
+- The repo now includes a shared scheme at `Backloger.xcodeproj/xcshareddata/xcschemes/Backloger.xcscheme`
 
-- screen state is mostly local `@State`
-- persistence side effects still happen directly from views
-- tests are still mostly placeholders
-- no migration strategy exists for persisted data shape changes
-
-If you make deeper changes, preserve backward compatibility for stored Codable data unless the task explicitly allows breaking existing saved state.
-
-## Git Hygiene
-
-This repo now includes a `.gitignore` for common Xcode and macOS noise.
-
-Files removed as unnecessary tracked metadata:
-
-- `Backloger.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist`
-- `Backloger.xcodeproj/xcuserdata/mikepastula.xcuserdatad/xcschemes/xcschememanagement.plist`
-
-Files that should stay tracked:
-
-- `Backloger.xcodeproj/project.pbxproj`
-- `Backloger.xcodeproj/project.xcworkspace/contents.xcworkspacedata`
-- all app source, assets, tests, and README/demo files
+If CI behavior changes, update both this file and `README.md`.
 
 ## Working Guidelines
 
@@ -133,21 +87,16 @@ Files that should stay tracked:
 - Reuse the styling primitives in `AppTheme.swift` instead of creating one-off visual patterns.
 - If you touch category behavior, verify `Category.title`, `Category.symbolName`, and `BacklogListAll.list(for:)` stay aligned.
 - If you touch daily activity flow, verify carry-over and history logic together.
-- Be careful with saved-data schema changes because there is no migration layer.
+- If you change storage, also update `README.md` where storage is described.
+- If you add or change repo automation, also update `README.md` and this file.
 
 ## Suggested Verification
 
-If full Xcode is installed and selected, useful commands are:
+Typical local verification commands:
 
 ```bash
 xcodebuild -list -project Backloger.xcodeproj
-xcodebuild test -project Backloger.xcodeproj -scheme Backloger -destination 'platform=iOS Simulator,name=iPhone 15'
+xcodebuild test -project Backloger.xcodeproj -scheme Backloger -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-In the current environment, `xcodebuild` could not be run because the active developer directory points to Command Line Tools instead of a full Xcode app.
-
-## README Relationship
-
-`README.md` is still a lightweight product-facing file.
-
-`agents.md` is the implementation-facing reference for future contributors and coding agents.
+In the current local environment, `xcodebuild` could not be run because the active developer directory points to Command Line Tools instead of a full Xcode app.
