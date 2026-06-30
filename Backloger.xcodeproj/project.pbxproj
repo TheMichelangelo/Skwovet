@@ -20,6 +20,7 @@
 		BE1BF4C12A4113F80086B833 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = BE1BF4C02A4113F80086B833 /* logo.png */; };
 		BE1BF4C32A41CB4D0086B833 /* ExpandableListItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */; };
 		BEC671A32A42425100C056F2 /* ShopListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC671A22A42425100C056F2 /* ShopListView.swift */; };
+		FC0D0F2A2D4A1001000A1B2C /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0D0F292D4A1001000A1B2C /* AppTheme.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +57,7 @@
 		BE1BF4C02A4113F80086B833 /* logo.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = logo.png; sourceTree = "<group>"; };
 		BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandableListItemView.swift; sourceTree = "<group>"; };
 		BEC671A22A42425100C056F2 /* ShopListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopListView.swift; sourceTree = "<group>"; };
+		FC0D0F292D4A1001000A1B2C /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -113,6 +115,7 @@
 				BEC671A22A42425100C056F2 /* ShopListView.swift */,
 				BE1BF4BB2A40F8CB0086B833 /* DayView.swift */,
 				BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */,
+				FC0D0F292D4A1001000A1B2C /* AppTheme.swift */,
 				BE1BF48F2A3F8A8B0086B833 /* Assets.xcassets */,
 				BE1BF4C02A4113F80086B833 /* logo.png */,
 				BE1BF4912A3F8A8B0086B833 /* Preview Content */,
@@ -283,6 +286,7 @@
 				BE1BF4BA2A40F38B0086B833 /* BacklogItemStructures.swift in Sources */,
 				BE1BF48C2A3F8A8A0086B833 /* BacklogerApp.swift in Sources */,
 				BE1BF4C32A41CB4D0086B833 /* ExpandableListItemView.swift in Sources */,
+				FC0D0F2A2D4A1001000A1B2C /* AppTheme.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -369,7 +373,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -423,7 +427,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -506,7 +510,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NYSYGTHN57;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mpast.BacklogerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -526,7 +530,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NYSYGTHN57;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mpast.BacklogerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
