@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 private enum Destination: Hashable {
     case day
@@ -12,6 +13,12 @@ private enum Destination: Hashable {
 }
 
 struct MainView: View {
+    @State private var isImportingBackup = false
+    @State private var isExportingBackup = false
+    @State private var backupDocument = BacklogBackupTransfer.makeBackupDocument()
+    @State private var transferMessage = ""
+    @State private var isShowingTransferAlert = false
+
     private let destinations: [(title: String, subtitle: String, icon: String, tint: Color, route: Destination)] = [
         ("Today", "Carry unfinished activities into a fresh daily plan.", "sun.max.fill", AppTheme.warmAccent, .day),
         ("Backlog", "Track books, comics, games, and personal goals.", "square.stack.3d.up.fill", AppTheme.accent, .backlog),
@@ -32,6 +39,7 @@ struct MainView: View {
                         )
 
                         heroCard
+                        backupCard
 
                         VStack(spacing: 14) {
                             ForEach(destinations, id: \.title) { destination in
@@ -61,6 +69,25 @@ struct MainView: View {
                     ShopListView()
                 }
             }
+            .fileImporter(
+                isPresented: $isImportingBackup,
+                allowedContentTypes: [.json]
+            ) { result in
+                handleImport(result)
+            }
+            .fileExporter(
+                isPresented: $isExportingBackup,
+                document: backupDocument,
+                contentType: .json,
+                defaultFilename: BacklogBackupTransfer.defaultFilename()
+            ) { result in
+                handleExport(result)
+            }
+            .alert("Backup", isPresented: $isShowingTransferAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(transferMessage)
+            }
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -89,6 +116,79 @@ struct MainView: View {
             }
         }
         .glassCard()
+    }
+
+    private var backupCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Backup your data")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                    Text("Export everything to one JSON file or import a backup to restore the app on a new install.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "externaldrive.badge.icloud")
+                    .font(.system(size: 28))
+                    .foregroundStyle(AppTheme.secondaryAccent)
+            }
+
+            HStack(spacing: 12) {
+                Button {
+                    backupDocument = BacklogBackupTransfer.makeBackupDocument()
+                    isExportingBackup = true
+                } label: {
+                    Label("Export JSON", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.secondaryAccent)
+
+                Button {
+                    isImportingBackup = true
+                } label: {
+                    Label("Import JSON", systemImage: "square.and.arrow.down")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(AppTheme.accent)
+            }
+        }
+        .glassCard()
+    }
+
+    private func handleImport(_ result: Result<URL, Error>) {
+        do {
+            let url = try result.get()
+            let didStartAccessing = url.startAccessingSecurityScopedResource()
+            defer {
+                if didStartAccessing {
+                    url.stopAccessingSecurityScopedResource()
+                }
+            }
+
+            let data = try Data(contentsOf: url)
+            try BacklogBackupTransfer.importBackup(from: data)
+            transferMessage = "Backup imported successfully. Open any section again to see the restored data."
+            isShowingTransferAlert = true
+        } catch {
+            transferMessage = "Import failed. Please choose a valid BackLogger JSON backup."
+            isShowingTransferAlert = true
+        }
+    }
+
+    private func handleExport(_ result: Result<URL, Error>) {
+        switch result {
+        case .success:
+            transferMessage = "Backup exported successfully."
+        case .failure:
+            transferMessage = "Export failed. Please try again."
+        }
+
+        isShowingTransferAlert = true
     }
 }
 
