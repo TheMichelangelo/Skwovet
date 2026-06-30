@@ -21,7 +21,7 @@ The app keeps its data on-device with `UserDefaults`. There is no backend, sync 
 
 - `README.md`: product-facing overview, storage summary, demo, and CI notes
 - `agent.md`: contributor and coding-agent guide
-- `.github/workflows/ios-ci.yml`: GitHub Actions workflow for build and test on pushes to `master`
+- `.github/workflows/ios-ci.yml`: GitHub Actions workflow for build and test on pushes to `main`
 - `.gitignore`: Xcode/macOS ignore rules
 - `Backloger/`: app source
 - `Backloger.xcodeproj/`: Xcode project and shared scheme

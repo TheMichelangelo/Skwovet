@@ -13,7 +13,7 @@ BackLogger is a local-first iOS app for tracking:
 - Buy list for quick purchase reminders
 - Modern SwiftUI navigation and refreshed visual design
 - On-device persistence with `UserDefaults`
-- Automated GitHub Actions build-and-test workflow on pushes to `master`
+- Automated GitHub Actions build-and-test workflow on pushes to `main`
 
 ## Storage
 
@@ -37,7 +37,7 @@ The repository includes:
 - UI test templates in `BacklogerUITests/`
 - a GitHub Actions workflow at `.github/workflows/ios-ci.yml`
 
-The workflow builds the app and runs tests on pushes to `master`.
+The workflow builds the app and runs tests on pushes to `main`.
 
 ## Future Work
 
