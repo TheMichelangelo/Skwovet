@@ -83,21 +83,20 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         && lhs.playstationGameItems == rhs.playstationGameItems && lhs.activityItems == rhs.activityItems
     }
     
-    static func loadFromStorage(store: UserDefaults = .standard) -> BacklogListAll {
-        if let data = store.data(forKey: StorageKey.backlogList) {
-            let decoder = JSONDecoder()
-            if let decodedTasks = try? decoder.decode(BacklogListAll.self, from: data) {
-                return decodedTasks
-            }
-            return BacklogListAll()
-        }
-        return BacklogListAll()
+    static func loadFromStorage(
+        database: SQLiteStorage = .shared,
+        legacyStore: UserDefaults = .standard
+    ) -> BacklogListAll {
+        loadCodableValue(
+            forKey: StorageKey.backlogList,
+            database: database,
+            legacyStore: legacyStore,
+            defaultValue: BacklogListAll()
+        )
     }
     
-    static func saveToStorage(backlogList: BacklogListAll, store: UserDefaults = .standard) {
-        if let encoded = try? JSONEncoder().encode(backlogList) {
-            store.set(encoded, forKey: StorageKey.backlogList)
-        }
+    static func saveToStorage(backlogList: BacklogListAll, database: SQLiteStorage = .shared) {
+        saveCodableValue(backlogList, forKey: StorageKey.backlogList, database: database)
     }
 
     func list(for category: Category) -> BacklogList {
@@ -188,29 +187,29 @@ final class ActivityBacklogListAll: Codable, Hashable, ObservableObject {
         hasher.combine(days)
     }
     
-    static func loadFromStorage(store: UserDefaults = .standard) -> ActivityBacklogListAll {
-        if let data = store.data(forKey: StorageKey.activityBacklogList) {
-            let decoder = JSONDecoder()
-            if let decodedTasks = try? decoder.decode(ActivityBacklogListAll.self, from: data) {
-                return decodedTasks
-            }
-            return ActivityBacklogListAll()
-        }
-        return ActivityBacklogListAll()
+    static func loadFromStorage(
+        database: SQLiteStorage = .shared,
+        legacyStore: UserDefaults = .standard
+    ) -> ActivityBacklogListAll {
+        loadCodableValue(
+            forKey: StorageKey.activityBacklogList,
+            database: database,
+            legacyStore: legacyStore,
+            defaultValue: ActivityBacklogListAll()
+        )
     }
     
-    static func saveToStorage(backlogList: ActivityBacklogListAll, store: UserDefaults = .standard) {
-        if let encoded = try? JSONEncoder().encode(backlogList) {
-            store.set(encoded, forKey: StorageKey.activityBacklogList)
-        }
+    static func saveToStorage(backlogList: ActivityBacklogListAll, database: SQLiteStorage = .shared) {
+        saveCodableValue(backlogList, forKey: StorageKey.activityBacklogList, database: database)
     }
 
     static func preparedForToday(
         calendar: Calendar = .current,
         today: Date = Date(),
-        store: UserDefaults = .standard
+        database: SQLiteStorage = .shared,
+        legacyStore: UserDefaults = .standard
     ) -> ActivityBacklogListAll {
-        let backlogList = loadFromStorage(store: store)
+        let backlogList = loadFromStorage(database: database, legacyStore: legacyStore)
 
         guard !backlogList.days.isEmpty else {
             backlogList.days = [DayActivityBacklogList()]
@@ -226,7 +225,7 @@ final class ActivityBacklogListAll: Codable, Hashable, ObservableObject {
         let newDay = DayActivityBacklogList(items: unfinishedItems)
         backlogList.days.append(newDay)
         backlogList.days.sort { $0.currentDate > $1.currentDate }
-        saveToStorage(backlogList: backlogList, store: store)
+        saveToStorage(backlogList: backlogList, database: database)
         return backlogList
     }
 }
@@ -296,20 +295,55 @@ enum StorageKey {
 }
 
 enum BuyListStorage {
-    static func load(store: UserDefaults = .standard) -> [BacklogItem] {
-        guard let data = store.data(forKey: StorageKey.buyBacklogList) else {
-            return []
-        }
-
-        let decoder = JSONDecoder()
-        return (try? decoder.decode([BacklogItem].self, from: data)) ?? []
+    static func load(
+        database: SQLiteStorage = .shared,
+        legacyStore: UserDefaults = .standard
+    ) -> [BacklogItem] {
+        loadCodableValue(
+            forKey: StorageKey.buyBacklogList,
+            database: database,
+            legacyStore: legacyStore,
+            defaultValue: []
+        )
     }
     
-    static func save(_ items: [BacklogItem], store: UserDefaults = .standard) {
-        if let encoded = try? JSONEncoder().encode(items) {
-            store.set(encoded, forKey: StorageKey.buyBacklogList)
-        }
+    static func save(_ items: [BacklogItem], database: SQLiteStorage = .shared) {
+        saveCodableValue(items, forKey: StorageKey.buyBacklogList, database: database)
     }
+}
+
+private func loadCodableValue<T: Decodable>(
+    forKey key: String,
+    database: SQLiteStorage,
+    legacyStore: UserDefaults,
+    defaultValue: T
+) -> T {
+    let decoder = JSONDecoder()
+
+    if let data = database.load(forKey: key),
+       let decodedValue = try? decoder.decode(T.self, from: data) {
+        return decodedValue
+    }
+
+    if let legacyData = legacyStore.data(forKey: key),
+       let decodedValue = try? decoder.decode(T.self, from: legacyData) {
+        database.save(legacyData, forKey: key)
+        return decodedValue
+    }
+
+    return defaultValue
+}
+
+private func saveCodableValue<T: Encodable>(
+    _ value: T,
+    forKey key: String,
+    database: SQLiteStorage
+) {
+    guard let encoded = try? JSONEncoder().encode(value) else {
+        return
+    }
+
+    database.save(encoded, forKey: key)
 }
 
 enum BacklogLogic {
