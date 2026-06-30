@@ -145,19 +145,15 @@ struct ShopListView: View {
     }
 
     private func addTask() {
-        let task = newTask.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !task.isEmpty else {
+        guard BuyListLogic.addTask(newTask, to: &items) else {
             return
         }
-
-        items.append(BacklogItem(task: task))
-        items.sort { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
         BuyListStorage.save(items)
         newTask = ""
     }
 
     private func removeTask(_ item: BacklogItem) {
-        items.removeAll { $0.id == item.id }
+        BuyListLogic.removeTask(item, from: &items)
         BuyListStorage.save(items)
     }
 }

@@ -83,8 +83,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         && lhs.playstationGameItems == rhs.playstationGameItems && lhs.activityItems == rhs.activityItems
     }
     
-    static func loadFromStorage() -> BacklogListAll {
-        if let data = UserDefaults.standard.data(forKey: StorageKey.backlogList) {
+    static func loadFromStorage(store: UserDefaults = .standard) -> BacklogListAll {
+        if let data = store.data(forKey: StorageKey.backlogList) {
             let decoder = JSONDecoder()
             if let decodedTasks = try? decoder.decode(BacklogListAll.self, from: data) {
                 return decodedTasks
@@ -94,9 +94,9 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         return BacklogListAll()
     }
     
-    static func saveToStorage(backlogList: BacklogListAll) {
+    static func saveToStorage(backlogList: BacklogListAll, store: UserDefaults = .standard) {
         if let encoded = try? JSONEncoder().encode(backlogList) {
-            UserDefaults.standard.set(encoded, forKey: StorageKey.backlogList)
+            store.set(encoded, forKey: StorageKey.backlogList)
         }
     }
 
@@ -188,8 +188,8 @@ final class ActivityBacklogListAll: Codable, Hashable, ObservableObject {
         hasher.combine(days)
     }
     
-    static func loadFromStorage() -> ActivityBacklogListAll {
-        if let data = UserDefaults.standard.data(forKey: StorageKey.activityBacklogList) {
+    static func loadFromStorage(store: UserDefaults = .standard) -> ActivityBacklogListAll {
+        if let data = store.data(forKey: StorageKey.activityBacklogList) {
             let decoder = JSONDecoder()
             if let decodedTasks = try? decoder.decode(ActivityBacklogListAll.self, from: data) {
                 return decodedTasks
@@ -199,21 +199,24 @@ final class ActivityBacklogListAll: Codable, Hashable, ObservableObject {
         return ActivityBacklogListAll()
     }
     
-    static func saveToStorage(backlogList: ActivityBacklogListAll) {
+    static func saveToStorage(backlogList: ActivityBacklogListAll, store: UserDefaults = .standard) {
         if let encoded = try? JSONEncoder().encode(backlogList) {
-            UserDefaults.standard.set(encoded, forKey: StorageKey.activityBacklogList)
+            store.set(encoded, forKey: StorageKey.activityBacklogList)
         }
     }
 
-    static func preparedForToday(calendar: Calendar = .current) -> ActivityBacklogListAll {
-        let backlogList = loadFromStorage()
+    static func preparedForToday(
+        calendar: Calendar = .current,
+        today: Date = Date(),
+        store: UserDefaults = .standard
+    ) -> ActivityBacklogListAll {
+        let backlogList = loadFromStorage(store: store)
 
         guard !backlogList.days.isEmpty else {
             backlogList.days = [DayActivityBacklogList()]
             return backlogList
         }
 
-        let today = Date()
         if backlogList.days.contains(where: { calendar.isDate($0.currentDate, inSameDayAs: today) }) {
             backlogList.days.sort { $0.currentDate > $1.currentDate }
             return backlogList
@@ -223,7 +226,7 @@ final class ActivityBacklogListAll: Codable, Hashable, ObservableObject {
         let newDay = DayActivityBacklogList(items: unfinishedItems)
         backlogList.days.append(newDay)
         backlogList.days.sort { $0.currentDate > $1.currentDate }
-        saveToStorage(backlogList: backlogList)
+        saveToStorage(backlogList: backlogList, store: store)
         return backlogList
     }
 }
@@ -293,8 +296,8 @@ enum StorageKey {
 }
 
 enum BuyListStorage {
-    static func load() -> [BacklogItem] {
-        guard let data = UserDefaults.standard.data(forKey: StorageKey.buyBacklogList) else {
+    static func load(store: UserDefaults = .standard) -> [BacklogItem] {
+        guard let data = store.data(forKey: StorageKey.buyBacklogList) else {
             return []
         }
 
@@ -302,9 +305,153 @@ enum BuyListStorage {
         return (try? decoder.decode([BacklogItem].self, from: data)) ?? []
     }
     
-    static func save(_ items: [BacklogItem]) {
+    static func save(_ items: [BacklogItem], store: UserDefaults = .standard) {
         if let encoded = try? JSONEncoder().encode(items) {
-            UserDefaults.standard.set(encoded, forKey: StorageKey.buyBacklogList)
+            store.set(encoded, forKey: StorageKey.buyBacklogList)
         }
+    }
+}
+
+enum BacklogLogic {
+    static func filteredItems(in backlog: BacklogList, status: CompleteCategory) -> [BacklogItem] {
+        backlog.items.filter { item in
+            status == .completed ? item.complete : !item.complete
+        }
+    }
+
+    static func completionRatio(for backlog: BacklogList) -> Double {
+        guard !backlog.items.isEmpty else {
+            return 0
+        }
+
+        let completedCount = backlog.items.filter(\.complete).count
+        return Double(completedCount) / Double(backlog.items.count)
+    }
+
+    static func highlightedItem(in backlog: BacklogList) -> BacklogItem? {
+        if !backlog.currentItem.complete,
+           backlog.items.contains(where: { $0.id == backlog.currentItem.id }) {
+            return backlog.currentItem
+        }
+
+        return backlog.items.first(where: { !$0.complete })
+    }
+
+    @discardableResult
+    static func addTask(_ rawTask: String, to backlog: BacklogList) -> Bool {
+        let task = rawTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty else {
+            return false
+        }
+
+        backlog.items.append(BacklogItem(task: task))
+        backlog.items.sort { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
+        return true
+    }
+
+    @discardableResult
+    static func setRandomCurrentItem(in backlog: BacklogList) -> BacklogItem? {
+        let openItems = backlog.items.filter { !$0.complete }
+        guard let randomItem = openItems.randomElement() else {
+            return nil
+        }
+
+        backlog.currentItem = randomItem
+        return randomItem
+    }
+
+    static func removeTask(_ item: BacklogItem, from backlog: BacklogList) {
+        backlog.items.removeAll { $0.id == item.id }
+
+        if backlog.currentItem.id == item.id,
+           let replacement = backlog.items.first(where: { !$0.complete }) {
+            backlog.currentItem = replacement
+        }
+    }
+
+    static func completeTask(_ item: BacklogItem, in backlog: BacklogList, completionDate: Date = Date()) {
+        guard let index = backlog.items.firstIndex(where: { $0.id == item.id }) else {
+            return
+        }
+
+        backlog.items[index].complete = true
+        backlog.items[index].dateCompleted = completionDate
+
+        if backlog.currentItem.id == item.id,
+           let replacement = backlog.items.first(where: { !$0.complete && $0.id != item.id }) {
+            backlog.currentItem = replacement
+        }
+    }
+}
+
+enum DayLogic {
+    static func todayIndex(in backlogList: ActivityBacklogListAll, calendar: Calendar = .current, today: Date = Date()) -> Int {
+        backlogList.days.firstIndex(where: { calendar.isDate($0.currentDate, inSameDayAs: today) }) ?? 0
+    }
+
+    static func openItems(in day: DayActivityBacklogList) -> [ActivityBacklogItem] {
+        day.items.filter { !$0.complete }
+    }
+
+    static func completionRatio(for day: DayActivityBacklogList) -> Double {
+        guard !day.items.isEmpty else {
+            return 0
+        }
+
+        let completedCount = day.items.filter(\.complete).count
+        return Double(completedCount) / Double(day.items.count)
+    }
+
+    static func previousDays(
+        in backlogList: ActivityBacklogListAll,
+        calendar: Calendar = .current,
+        today: Date = Date()
+    ) -> [DayActivityBacklogList] {
+        let index = todayIndex(in: backlogList, calendar: calendar, today: today)
+        return Array(backlogList.days.enumerated())
+            .filter { $0.offset != index }
+            .map(\.element)
+            .sorted { $0.currentDate > $1.currentDate }
+    }
+
+    @discardableResult
+    static func addTask(_ rawTask: String, to day: DayActivityBacklogList) -> Bool {
+        let task = rawTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty else {
+            return false
+        }
+
+        day.items.append(ActivityBacklogItem(task: task))
+        day.items.sort { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
+        return true
+    }
+
+    static func removeTask(_ item: ActivityBacklogItem, from day: DayActivityBacklogList) {
+        day.items.removeAll { $0.id == item.id }
+    }
+
+    static func completeTask(_ item: ActivityBacklogItem, in day: DayActivityBacklogList) {
+        guard let index = day.items.firstIndex(where: { $0.id == item.id }) else {
+            return
+        }
+
+        day.items[index].complete = true
+    }
+}
+
+enum BuyListLogic {
+    static func addTask(_ rawTask: String, to items: inout [BacklogItem]) -> Bool {
+        let task = rawTask.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty else {
+            return false
+        }
+
+        items.append(BacklogItem(task: task))
+        items.sort { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
+        return true
+    }
+
+    static func removeTask(_ item: BacklogItem, from items: inout [BacklogItem]) {
+        items.removeAll { $0.id == item.id }
     }
 }

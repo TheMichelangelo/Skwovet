@@ -14,7 +14,7 @@ struct DayView: View {
     private let calendar = Calendar.current
 
     private var todayIndex: Int {
-        backlogList.days.firstIndex(where: { calendar.isDateInToday($0.currentDate) }) ?? 0
+        DayLogic.todayIndex(in: backlogList, calendar: calendar)
     }
 
     private var todayBacklog: DayActivityBacklogList {
@@ -22,23 +22,15 @@ struct DayView: View {
     }
 
     private var openItems: [ActivityBacklogItem] {
-        todayBacklog.items.filter { !$0.complete }
+        DayLogic.openItems(in: todayBacklog)
     }
 
     private var progress: Double {
-        guard !todayBacklog.items.isEmpty else {
-            return 0
-        }
-
-        let completedCount = todayBacklog.items.filter(\.complete).count
-        return Double(completedCount) / Double(todayBacklog.items.count)
+        DayLogic.completionRatio(for: todayBacklog)
     }
 
     private var previousDays: [DayActivityBacklogList] {
-        Array(backlogList.days.enumerated())
-            .filter { $0.offset != todayIndex }
-            .map(\.element)
-            .sorted { $0.currentDate > $1.currentDate }
+        DayLogic.previousDays(in: backlogList, calendar: calendar)
     }
 
     var body: some View {
@@ -213,14 +205,9 @@ struct DayView: View {
     }
 
     private func addTask() {
-        let task = newTask.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !task.isEmpty else {
+        guard DayLogic.addTask(newTask, to: todayBacklog) else {
             return
         }
-
-        let newItem = ActivityBacklogItem(task: task)
-        todayBacklog.items.append(newItem)
-        todayBacklog.items.sort { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
 
         ActivityBacklogListAll.saveToStorage(backlogList: backlogList)
         newTask = ""
@@ -228,17 +215,13 @@ struct DayView: View {
     }
 
     private func removeTask(_ item: ActivityBacklogItem) {
-        todayBacklog.items.removeAll { $0.id == item.id }
+        DayLogic.removeTask(item, from: todayBacklog)
         ActivityBacklogListAll.saveToStorage(backlogList: backlogList)
         refreshTick += 1
     }
 
     private func completeTask(_ item: ActivityBacklogItem) {
-        guard let index = todayBacklog.items.firstIndex(where: { $0.id == item.id }) else {
-            return
-        }
-
-        todayBacklog.items[index].complete = true
+        DayLogic.completeTask(item, in: todayBacklog)
         ActivityBacklogListAll.saveToStorage(backlogList: backlogList)
         refreshTick += 1
     }

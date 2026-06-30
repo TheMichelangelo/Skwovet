@@ -18,27 +18,15 @@ struct ContentView: View {
     }
 
     private var filteredItems: [BacklogItem] {
-        currentBacklog.items.filter { item in
-            completedCategory == .completed ? item.complete : !item.complete
-        }
+        BacklogLogic.filteredItems(in: currentBacklog, status: completedCategory)
     }
 
     private var completionRatio: Double {
-        guard !currentBacklog.items.isEmpty else {
-            return 0
-        }
-
-        let completedCount = currentBacklog.items.filter(\.complete).count
-        return Double(completedCount) / Double(currentBacklog.items.count)
+        BacklogLogic.completionRatio(for: currentBacklog)
     }
 
     private var highlightedItem: BacklogItem? {
-        if !currentBacklog.currentItem.complete,
-           currentBacklog.items.contains(where: { $0.id == currentBacklog.currentItem.id }) {
-            return currentBacklog.currentItem
-        }
-
-        return currentBacklog.items.first(where: { !$0.complete })
+        BacklogLogic.highlightedItem(in: currentBacklog)
     }
 
     var body: some View {
@@ -257,14 +245,9 @@ struct ContentView: View {
     }
 
     private func addTask() {
-        let task = newTask.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !task.isEmpty else {
+        guard BacklogLogic.addTask(newTask, to: currentBacklog) else {
             return
         }
-
-        let newItem = BacklogItem(task: task)
-        currentBacklog.items.append(newItem)
-        currentBacklog.items.sort { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
 
         BacklogListAll.saveToStorage(backlogList: backlogList)
         newTask = ""
@@ -272,41 +255,21 @@ struct ContentView: View {
     }
 
     private func setRandomItem() {
-        let openItems = currentBacklog.items.filter { !$0.complete }
-        guard let randomItem = openItems.randomElement() else {
+        guard BacklogLogic.setRandomCurrentItem(in: currentBacklog) != nil else {
             return
         }
-
-        currentBacklog.currentItem = randomItem
         BacklogListAll.saveToStorage(backlogList: backlogList)
         refreshTick += 1
     }
 
     private func removeTask(_ item: BacklogItem) {
-        currentBacklog.items.removeAll { $0.id == item.id }
-
-        if currentBacklog.currentItem.id == item.id, let replacement = currentBacklog.items.first(where: { !$0.complete }) {
-            currentBacklog.currentItem = replacement
-        }
-
+        BacklogLogic.removeTask(item, from: currentBacklog)
         BacklogListAll.saveToStorage(backlogList: backlogList)
         refreshTick += 1
     }
 
     private func completeTask(_ item: BacklogItem) {
-        guard let index = currentBacklog.items.firstIndex(where: { $0.id == item.id }) else {
-            return
-        }
-
-        currentBacklog.items[index].complete = true
-        currentBacklog.items[index].dateCompleted = Date()
-
-        if currentBacklog.currentItem.id == item.id {
-            if let replacement = currentBacklog.items.first(where: { !$0.complete && $0.id != item.id }) {
-                currentBacklog.currentItem = replacement
-            }
-        }
-
+        BacklogLogic.completeTask(item, in: currentBacklog)
         BacklogListAll.saveToStorage(backlogList: backlogList)
         refreshTick += 1
     }
