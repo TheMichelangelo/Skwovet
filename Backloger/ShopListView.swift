@@ -2,116 +2,164 @@
 //  ShopListView.swift
 //  Backloger
 //
-//  Created by Mike Pastula on 20.06.2023.
-//
 
 import SwiftUI
 
 struct ShopListView: View {
-    @State private var newTask: String = ""
-    @State private var backlogItemsList: [BacklogItem]
-    
-    init() {
-        _newTask = State(initialValue: "")
-        if let data = UserDefaults.standard.data(forKey: "buyBacklogList") {
-            let decoder = JSONDecoder()
-            if let decodedTasks = try? decoder.decode([BacklogItem].self, from: data) {
-                _backlogItemsList = State(initialValue: decodedTasks)
-            } else {
-                _backlogItemsList = State(initialValue: [BacklogItem]())
-            }
-        } else {
-            _backlogItemsList = State(initialValue: [BacklogItem]())
-        }
-    }
-    
+    @State private var items = BuyListStorage.load()
+    @State private var newTask = ""
+    @FocusState private var isInputFocused: Bool
+
     var body: some View {
-        VStack {
-            ZStack {
-                LinearGradient(colors: [.red, .blue], startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-                VStack {
-                    Text("My Buy List")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .padding(.top, 1)
-                        .foregroundColor(.white.opacity(0.7))
-                    
-                    HStack{
-                            TextField("New item",text: $newTask)
-                                    .padding(.all)
-                                    .background(.regularMaterial)
-                                    .cornerRadius(25)
-                                    .accentColor(.red)
-                            Button(action:addTask){
-                            Text("Add").foregroundColor(.white.opacity(0.7))
-                        }.buttonStyle(.bordered)
-                    }.padding(.bottom, 45)
+        ZStack {
+            AppGradientBackground()
+
+            List {
+                titleSection
+                summarySection
+                itemsSection
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+        }
+        .navigationTitle("Buy List")
+        .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            composerBar
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") {
+                    isInputFocused = false
                 }
             }
-            .frame(height: 200)
-            
-            VStack {
-                    List(backlogItemsList) { item in
-                        HStack {
-                            Text(item.task)
-                                .foregroundColor(.blue)
-                        }
-                        .swipeActions() {
-                            Button(role: .destructive) {
-                                removeTask(item)
-                            } label: {
-                                Label("Delete item", systemImage: "trash")
-                            }
+        }
+    }
+
+    private var titleSection: some View {
+        Section {
+            ScreenTitle(
+                eyebrow: "Shopping",
+                title: "Buy List",
+                subtitle: "A quick place to park purchases before they disappear from your head."
+            )
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private var summarySection: some View {
+        Section {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Ready to pick up")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                    Text(items.isEmpty ? "Your list is empty right now." : "\(items.count) items waiting.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                MetricPill(
+                    title: "Count",
+                    value: "\(items.count)",
+                    tint: AppTheme.secondaryAccent
+                )
+            }
+            .glassCard()
+            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private var itemsSection: some View {
+        Section("Items") {
+            if items.isEmpty {
+                EmptyStateCard(
+                    systemImage: "bag.badge.plus",
+                    title: "Nothing to buy",
+                    message: "Add an item below and it will show up here."
+                )
+                .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                .listRowBackground(Color.clear)
+            } else {
+                ForEach(items) { item in
+                    HStack(spacing: 14) {
+                        Image(systemName: "bag")
+                            .font(.title3)
+                            .foregroundStyle(AppTheme.secondaryAccent)
+                        Text(item.task)
+                            .font(.body.weight(.medium))
+                        Spacer()
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.horizontal, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color.white.opacity(0.66))
+                    )
+                    .swipeActions {
+                        Button(role: .destructive) {
+                            removeTask(item)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
                     }
-                
-                Text("Created by @mpast")
-                    .font(.title2)
-                    .foregroundColor(.orange)
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
             }
-        }.onTapGesture {
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to:nil, from:nil, for:nil)
         }
     }
-    
-    func addTask() {
-        guard !newTask.isEmpty else {
+
+    private var composerBar: some View {
+        HStack(spacing: 12) {
+            TextField("Add a new item", text: $newTask)
+                .textInputAutocapitalization(.sentences)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .focused($isInputFocused)
+                .onSubmit(addTask)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                )
+
+            Button(action: addTask) {
+                Image(systemName: "plus")
+                    .font(.headline.weight(.bold))
+                    .frame(width: 50, height: 50)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.secondaryAccent)
+            .disabled(newTask.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 12)
+        .background(.ultraThinMaterial)
+    }
+
+    private func addTask() {
+        guard BuyListLogic.addTask(newTask, to: &items) else {
             return
         }
-        
-        let newItem = BacklogItem(task: newTask)
-        backlogItemsList.append(newItem)
-        backlogItemsList.sort { (item1, item2) -> Bool in
-            return item1.task < item2.task
-        }
-        saveItems()
+        BuyListStorage.save(items)
         newTask = ""
     }
-    func removeTask(_ item: BacklogItem) {
-        backlogItemsList.removeAll { $0.id == item.id }
-        saveItems()
-    }
-    
-    func completeTask(_ item: BacklogItem) {
-        for i in 0 ..< backlogItemsList.count {
-            if backlogItemsList[i].id == item.id{
-                backlogItemsList[i].complete = true
-                backlogItemsList[i].dateCompleted = Date()
-            }
-        }
-        saveItems()
-    }
-    
-    func saveItems() {
-        if let encoded = try? JSONEncoder().encode(backlogItemsList) {
-            UserDefaults.standard.set(encoded, forKey: "buyBacklogList")
-        }
+
+    private func removeTask(_ item: BacklogItem) {
+        BuyListLogic.removeTask(item, from: &items)
+        BuyListStorage.save(items)
     }
 }
 
-struct ShopListView_Previews: PreviewProvider {
-    static var previews: some View {
+#Preview {
+    NavigationStack {
         ShopListView()
     }
 }

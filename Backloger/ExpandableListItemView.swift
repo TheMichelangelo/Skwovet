@@ -2,44 +2,70 @@
 //  ExpandableListItemView.swift
 //  Backloger
 //
-//  Created by Mike Pastula on 20.06.2023.
-//
 
 import SwiftUI
 
 struct ExpandableListItemView: View {
     @State private var isExpanded = false
-    
-    var title: String
-    var items: [ActivityBacklogItem]
-    
+
+    let title: String
+    let items: [ActivityBacklogItem]
+
+    private var progress: Double {
+        guard !items.isEmpty else {
+            return 0
+        }
+
+        let completedItemsCount = items.filter(\.complete).count
+        return Double(completedItemsCount) / Double(items.count)
+    }
+
     var body: some View {
-            VStack {
-                DisclosureGroup(isExpanded: $isExpanded) {
-                    let completedItemsCount = items.filter { $0.complete }.count
-                    let progress = Float(completedItemsCount) / Float(items.count)
-                    ProgressView(value: progress,total: 1)
-                    VStack(alignment: .leading) {
-                        ForEach(items, id: \.self) { item in
-                            Text(item.task)
-                                .padding(.leading)
-                                .foregroundColor(item.complete ? .green : .red)
-                        }
+        DisclosureGroup(isExpanded: $isExpanded) {
+            VStack(alignment: .leading, spacing: 14) {
+                ProgressView(value: progress)
+                    .tint(AppTheme.accent)
+
+                ForEach(items, id: \.self) { item in
+                    HStack(spacing: 10) {
+                        Image(systemName: item.complete ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(item.complete ? AppTheme.secondaryAccent : AppTheme.warmAccent)
+                        Text(item.task)
+                            .foregroundStyle(.primary)
                     }
-                } label: {
-                    Text(title)
-                        .font(.headline)
+                    .font(.subheadline)
                 }
-                .padding()
-                .foregroundColor(.blue)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(8)
+            }
+            .padding(.top, 12)
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.headline.weight(.semibold))
+                    Text("\(items.count) activities")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                MetricPill(
+                    title: "Done",
+                    value: "\(Int((progress * 100).rounded()))%",
+                    tint: AppTheme.accent
+                )
             }
         }
+        .glassCard()
+    }
 }
 
-struct ExpandableListItemView_Previews: PreviewProvider {
-    static var previews: some View {
-        ExpandableListItemView(title:"Test",items: [ActivityBacklogItem(task: "Task 1"),ActivityBacklogItem(task:"Task 2")])
-    }
+#Preview {
+    ExpandableListItemView(
+        title: "Jul 1, 2026",
+        items: [
+            ActivityBacklogItem(task: "Task 1"),
+            ActivityBacklogItem(task: "Task 2")
+        ]
+    )
 }

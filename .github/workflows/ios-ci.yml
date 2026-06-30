@@ -1,0 +1,26 @@
+name: iOS CI
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build and test
+        run: |
+          xcodebuild test \
+            -project Backloger.xcodeproj \
+            -scheme Backloger \
+            -destination "platform=iOS Simulator,OS=latest,name=iPhone 16" \
+            CODE_SIGNING_ALLOWED=NO
