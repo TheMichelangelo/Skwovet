@@ -246,7 +246,10 @@ struct MainView: View {
     }
 
     private func saveCategories(_ categories: [Category], completedOnboarding: Bool) {
-        collectionSettings.applySelection(categories, completedOnboarding: completedOnboarding)
+        collectionSettings = collectionSettings.updatedSelection(
+            categories,
+            completedOnboarding: completedOnboarding
+        )
         CollectionSettings.saveToStorage(settings: collectionSettings)
         isShowingCategoryManager = false
     }
@@ -380,7 +383,6 @@ private struct CategorySelectionView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isFirstLaunch ? "Continue" : "Save") {
                         onSave(workingSelection, true)
-                        dismiss()
                     }
                     .disabled(isSaveDisabled)
                 }

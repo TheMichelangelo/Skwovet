@@ -183,7 +183,7 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
     }
 }
 
-final class CollectionSettings: Codable, Hashable, ObservableObject {
+struct CollectionSettings: Codable, Hashable {
     var selectedCategories: [Category]
     var hasCompletedOnboarding: Bool
 
@@ -195,22 +195,11 @@ final class CollectionSettings: Codable, Hashable, ObservableObject {
         self.hasCompletedOnboarding = hasCompletedOnboarding
     }
 
-    static func == (lhs: CollectionSettings, rhs: CollectionSettings) -> Bool {
-        lhs.selectedCategories == rhs.selectedCategories
-            && lhs.hasCompletedOnboarding == rhs.hasCompletedOnboarding
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(selectedCategories)
-        hasher.combine(hasCompletedOnboarding)
-    }
-
-    func applySelection(_ categories: [Category], completedOnboarding: Bool? = nil) {
-        selectedCategories = Self.normalized(categories)
-
-        if let completedOnboarding {
-            hasCompletedOnboarding = completedOnboarding
-        }
+    func updatedSelection(_ categories: [Category], completedOnboarding: Bool? = nil) -> CollectionSettings {
+        CollectionSettings(
+            selectedCategories: Self.normalized(categories),
+            hasCompletedOnboarding: completedOnboarding ?? hasCompletedOnboarding
+        )
     }
 
     static func loadFromStorage(
