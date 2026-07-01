@@ -4,18 +4,52 @@ import XCTest
 final class BacklogLogicTests: XCTestCase {
     func testCategoryMetadataIsAvailable() {
         XCTAssertEqual(Category.books.title, "Books")
-        XCTAssertEqual(Category.games_windows.symbolName, "desktopcomputer")
+        XCTAssertEqual(Category.games.symbolName, "gamecontroller")
+        XCTAssertEqual(Category.lego.completionActionTitle, "Mark Built")
+        XCTAssertEqual(Category.boardGames.mainScreenTitle, "Board Games")
         XCTAssertEqual(CompleteCategory.uncompleted.title, "Open")
+    }
+
+    func testMainUtilityItemsExposeExpectedHomeConfiguration() {
+        XCTAssertEqual(MainUtilityItem.all.count, 2)
+        XCTAssertEqual(MainUtilityItem.all[0].title, "Today")
+        XCTAssertEqual(MainUtilityItem.all[0].subtitle, "Check today activity plans")
+        XCTAssertEqual(MainUtilityItem.all[0].route, .day)
+        XCTAssertEqual(MainUtilityItem.all[1].title, "Wish-\nlist")
+        XCTAssertNil(MainUtilityItem.all[1].subtitle)
+        XCTAssertEqual(MainUtilityItem.all[1].route, .buy)
+    }
+
+    func testMainViewPresentationBuildsCollectionSummary() {
+        XCTAssertEqual(
+            MainViewPresentation.collectionSummary(for: 0),
+            "Pick at least one category to get started."
+        )
+        XCTAssertEqual(
+            MainViewPresentation.collectionSummary(for: 3),
+            "3 categories active on your home screen."
+        )
+    }
+
+    func testSettingsVersionFormatterFallsBackWhenValuesAreMissing() {
+        XCTAssertEqual(
+            SettingsVersionFormatter.versionText(shortVersion: nil, buildNumber: nil),
+            "Version 1.0 (1)"
+        )
+        XCTAssertEqual(
+            SettingsVersionFormatter.versionText(shortVersion: " 2.5 ", buildNumber: " 17 "),
+            "Version 2.5 (17)"
+        )
     }
 
     func testListForCategoryReturnsMatchingStoredList() {
         let allLists = BacklogListAll()
-        let books = BacklogItem(task: "Book")
+        let games = BacklogItem(task: "Zelda")
         let comics = BacklogItem(task: "Comic")
-        allLists.bookItems.items = [books]
+        allLists.gameItems.items = [games]
         allLists.comicsItems.items = [comics]
 
-        XCTAssertEqual(allLists.list(for: .books).items.first?.task, "Book")
+        XCTAssertEqual(allLists.list(for: .games).items.first?.task, "Zelda")
         XCTAssertEqual(allLists.list(for: .comics).items.first?.task, "Comic")
     }
 

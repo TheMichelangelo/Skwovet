@@ -25,6 +25,7 @@
 		FC0D0F2D2D4A1001000A1B2C /* StorageAndDayLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC0D0F2E2D4A1001000A1B2C /* StorageAndDayLogicTests.swift */; };
 		FC1D1A082F10000000A1B2C3 /* BacklogBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1D1A072F10000000A1B2C3 /* BacklogBackup.swift */; };
 		FC1D1A0A2F10000100A1B2C3 /* SQLiteStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */; };
+		FC2A4C6F2F20000100A1B2C3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2A4C6E2F20000100A1B2C3 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 		FC0D0F2E2D4A1001000A1B2C /* StorageAndDayLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageAndDayLogicTests.swift; sourceTree = "<group>"; };
 		FC1D1A072F10000000A1B2C3 /* BacklogBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BacklogBackup.swift; sourceTree = "<group>"; };
 		FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStorage.swift; sourceTree = "<group>"; };
+		FC2A4C6E2F20000100A1B2C3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +123,7 @@
 				BE1BF48D2A3F8A8A0086B833 /* MainView.swift */,
 				BE1BF4BE2A40FCD80086B833 /* ContentView.swift */,
 				BEC671A22A42425100C056F2 /* ShopListView.swift */,
+				FC2A4C6E2F20000100A1B2C3 /* SettingsView.swift */,
 				BE1BF4BB2A40F8CB0086B833 /* DayView.swift */,
 				BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */,
 				FC0D0F292D4A1001000A1B2C /* AppTheme.swift */,
@@ -295,6 +298,7 @@
 				BE1BF4BC2A40F8CB0086B833 /* DayView.swift in Sources */,
 				BE1BF4BF2A40FCD80086B833 /* ContentView.swift in Sources */,
 				BE1BF48E2A3F8A8A0086B833 /* MainView.swift in Sources */,
+				FC2A4C6F2F20000100A1B2C3 /* SettingsView.swift in Sources */,
 				BE1BF4BA2A40F38B0086B833 /* BacklogItemStructures.swift in Sources */,
 				FC1D1A082F10000000A1B2C3 /* BacklogBackup.swift in Sources */,
 				FC1D1A0A2F10000100A1B2C3 /* SQLiteStorage.swift in Sources */,

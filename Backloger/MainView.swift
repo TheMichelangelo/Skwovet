@@ -6,10 +6,56 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-private enum Destination: Hashable {
+enum MainDestination: Hashable {
     case day
     case buy
     case collection(Category)
+}
+
+struct MainUtilityItem: Identifiable, Hashable {
+    let title: String
+    let subtitle: String?
+    let icon: String
+    let tint: Color
+    let route: MainDestination
+
+    var id: String { title }
+
+    static let all: [MainUtilityItem] = [
+        MainUtilityItem(
+            title: "Today",
+            subtitle: "Check today activity plans",
+            icon: "sun.max.fill",
+            tint: AppTheme.warmAccent,
+            route: .day
+        ),
+        MainUtilityItem(
+            title: "Wish-\nlist",
+            subtitle: nil,
+            icon: "bag.fill",
+            tint: AppTheme.secondaryAccent,
+            route: .buy
+        )
+    ]
+}
+
+struct MainViewPresentation {
+    static func collectionSummary(for selectedCount: Int) -> String {
+        selectedCount == 0
+            ? "Pick at least one category to get started."
+            : "\(selectedCount) categories active on your home screen."
+    }
+}
+
+struct SettingsVersionFormatter {
+    static func versionText(shortVersion: String?, buildNumber: String?) -> String {
+        let resolvedShortVersion = shortVersion?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedBuildNumber = buildNumber?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let short = resolvedShortVersion?.isEmpty == false ? resolvedShortVersion! : "1.0"
+        let build = resolvedBuildNumber?.isEmpty == false ? resolvedBuildNumber! : "1"
+        return "Version \(short) (\(build))"
+    }
 }
 
 struct MainView: View {
@@ -22,10 +68,7 @@ struct MainView: View {
     @State private var transferMessage = ""
     @State private var isShowingTransferAlert = false
 
-    private let utilityDestinations: [(title: String, subtitle: String?, icon: String, tint: Color, route: Destination)] = [
-        ("Today", "Check today activity plans", "sun.max.fill", AppTheme.warmAccent, .day),
-        ("Wish-\nlist", nil, "bag.fill", AppTheme.secondaryAccent, .buy)
-    ]
+    private let utilityItems = MainUtilityItem.all
 
     private var selectedCategories: [Category] {
         collectionSettings.selectedCategories
@@ -35,6 +78,10 @@ struct MainView: View {
         !collectionSettings.hasCompletedOnboarding
     }
 
+    private var collectionSummary: String {
+        MainViewPresentation.collectionSummary(for: selectedCategories.count)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -42,17 +89,23 @@ struct MainView: View {
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
-                        headerSection
+                        MainHeaderView {
+                            isShowingSettings = true
+                        }
 
-                        utilitySection
-                        collectionOverviewCard
-                        collectionsSection
+                        MainUtilityGrid(items: utilityItems)
+                        CollectionOverviewCard(
+                            summary: collectionSummary,
+                            selectedCategoryCount: selectedCategories.count,
+                            onManageCategories: { isShowingCategoryManager = true }
+                        )
+                        CollectionsSection(categories: selectedCategories)
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
                 }
             }
-            .navigationDestination(for: Destination.self) { destination in
+            .navigationDestination(for: MainDestination.self) { destination in
                 switch destination {
                 case .day:
                     DayView()
@@ -71,13 +124,8 @@ struct MainView: View {
             }
             .sheet(isPresented: $isShowingSettings) {
                 SettingsView(
-                    onExport: {
-                        backupDocument = BacklogBackupTransfer.makeBackupDocument()
-                        isExportingBackup = true
-                    },
-                    onImport: {
-                        isImportingBackup = true
-                    }
+                    onExport: startExport,
+                    onImport: startImport
                 )
             }
             .fullScreenCover(isPresented: onboardingBinding) {
@@ -116,109 +164,13 @@ struct MainView: View {
         )
     }
 
-    private var headerSection: some View {
-        HStack(alignment: .top) {
-            Text("My Collections")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-
-            Spacer()
-
-            Button {
-                isShowingSettings = true
-            } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.headline)
-                    .foregroundStyle(.white)
-                    .padding(10)
-                    .background(Color.white.opacity(0.16), in: Circle())
-            }
-            .accessibilityLabel("Settings")
-        }
+    private func startExport() {
+        backupDocument = BacklogBackupTransfer.makeBackupDocument()
+        isExportingBackup = true
     }
 
-    private var collectionOverviewCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Your collection setup")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                    Text(selectedCategories.isEmpty ? "Pick at least one category to get started." : "\(selectedCategories.count) categories active on your home screen.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                Image(systemName: "square.grid.2x2.fill")
-                    .font(.system(size: 28))
-                    .foregroundStyle(AppTheme.accent)
-            }
-
-            HStack(spacing: 10) {
-                MetricPill(title: "Categories", value: "\(selectedCategories.count)", tint: AppTheme.accent)
-                MetricPill(title: "Mode", value: "Flexible", tint: AppTheme.secondaryAccent)
-            }
-
-            Button {
-                isShowingCategoryManager = true
-            } label: {
-                Label("Add or Remove Collection", systemImage: "slider.horizontal.3")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AppTheme.accent)
-        }
-        .glassCard()
-    }
-
-    private var collectionsSection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Collections")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-
-            if selectedCategories.isEmpty {
-                EmptyStateCard(
-                    systemImage: "square.stack.3d.up.slash",
-                    title: "No categories selected",
-                    message: "Add one or more collection types and they will appear here."
-                )
-            } else {
-                ForEach(selectedCategories) { category in
-                    NavigationLink(value: Destination.collection(category)) {
-                        HomeCard(
-                            title: category.mainScreenTitle,
-                            subtitle: category.subtitle,
-                            icon: category.symbolName,
-                            tint: AppTheme.accent
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-
-    private var utilitySection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 14),
-                GridItem(.flexible(), spacing: 14)
-            ], spacing: 14) {
-                ForEach(utilityDestinations, id: \.title) { destination in
-                    NavigationLink(value: destination.route) {
-                        UtilitySquareCard(
-                            title: destination.title,
-                            subtitle: destination.subtitle,
-                            icon: destination.icon,
-                            tint: destination.tint
-                        )
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
+    private func startImport() {
+        isImportingBackup = true
     }
 
     private func saveCategories(_ categories: [Category], completedOnboarding: Bool) {
@@ -263,35 +215,146 @@ struct MainView: View {
     }
 }
 
-private struct UtilitySquareCard: View {
-    let title: String
-    let subtitle: String?
-    let icon: String
-    let tint: Color
+private struct MainHeaderView: View {
+    let onOpenSettings: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top) {
+            Text("My Collections")
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+
+            Spacer()
+
+            Button(action: onOpenSettings) {
+                Image(systemName: "gearshape.fill")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .padding(10)
+                    .background(Color.white.opacity(0.16), in: Circle())
+            }
+            .accessibilityLabel("Settings")
+        }
+    }
+}
+
+private struct MainUtilityGrid: View {
+    let items: [MainUtilityItem]
+
+    var body: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 14),
+                GridItem(.flexible(), spacing: 14)
+            ],
+            spacing: 14
+        ) {
+            ForEach(items) { item in
+                NavigationLink(value: item.route) {
+                    UtilityRectangleCard(item: item)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+}
+
+private struct CollectionOverviewCard: View {
+    let summary: String
+    let selectedCategoryCount: Int
+    let onManageCategories: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Your collection setup")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                    Text(summary)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "square.grid.2x2.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(AppTheme.accent)
+            }
+
+            HStack(spacing: 10) {
+                MetricPill(title: "Categories", value: "\(selectedCategoryCount)", tint: AppTheme.accent)
+                MetricPill(title: "Mode", value: "Flexible", tint: AppTheme.secondaryAccent)
+            }
+
+            Button(action: onManageCategories) {
+                Label("Add or Remove Collection", systemImage: "slider.horizontal.3")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.accent)
+        }
+        .glassCard()
+    }
+}
+
+private struct CollectionsSection: View {
+    let categories: [Category]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Collections")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+
+            if categories.isEmpty {
+                EmptyStateCard(
+                    systemImage: "square.stack.3d.up.slash",
+                    title: "No categories selected",
+                    message: "Add one or more collection types and they will appear here."
+                )
+            } else {
+                ForEach(categories) { category in
+                    NavigationLink(value: MainDestination.collection(category)) {
+                        HomeCard(
+                            title: category.mainScreenTitle,
+                            subtitle: category.subtitle,
+                            icon: category.symbolName,
+                            tint: AppTheme.accent
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+private struct UtilityRectangleCard: View {
+    let item: MainUtilityItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(tint.opacity(0.14))
+                        .fill(item.tint.opacity(0.14))
                         .frame(width: 55, height: 55)
-                    Image(systemName: icon)
+                    Image(systemName: item.icon)
                         .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(tint)
+                        .foregroundStyle(item.tint)
                 }
 
-                Text(title)
+                Text(item.title)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
                     .lineSpacing(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
-
             }
 
-            if let subtitle {
+            if let subtitle = item.subtitle {
                 Text(subtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -301,98 +364,9 @@ private struct UtilitySquareCard: View {
             }
         }
         .padding(4)
-        .frame(maxWidth: .infinity, minHeight: 100, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 115, alignment: .topLeading)
         .contentShape(Rectangle())
         .glassCard()
-    }
-}
-
-private struct SettingsView: View {
-    let onExport: () -> Void
-    let onImport: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-
-    private var versionText: String {
-        let shortVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
-        let buildNumber = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
-        return "Version \(shortVersion) (\(buildNumber))"
-    }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                AppGradientBackground()
-
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 22) {
-                        ScreenTitle(
-                            eyebrow: "Settings",
-                            title: "Data",
-                            subtitle: "Export everything to one JSON backup or import data from an existing backup."
-                        )
-
-                        VStack(alignment: .leading, spacing: 16) {
-                            HStack(alignment: .top) {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Backup your data")
-                                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    Text("Keep your collections safe and restore them on a new install whenever you need.")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Spacer()
-
-                                Image(systemName: "externaldrive.badge.icloud")
-                                    .font(.system(size: 28))
-                                    .foregroundStyle(AppTheme.secondaryAccent)
-                            }
-
-                            HStack(spacing: 12) {
-                                Button {
-                                    dismiss()
-                                    onExport()
-                                } label: {
-                                    Label("Export JSON", systemImage: "square.and.arrow.up")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .tint(AppTheme.secondaryAccent)
-
-                                Button {
-                                    dismiss()
-                                    onImport()
-                                } label: {
-                                    Label("Import JSON", systemImage: "square.and.arrow.down")
-                                        .frame(maxWidth: .infinity)
-                                }
-                                .buttonStyle(.bordered)
-                                .tint(AppTheme.accent)
-                            }
-                        }
-                        .glassCard()
-                        .padding(.horizontal, 20)
-                    }
-                    .padding(.vertical, 24)
-                }
-            }
-            .safeAreaInset(edge: .bottom) {
-                Text(versionText)
-                    .font(.footnote)
-                    .foregroundStyle(Color.white.opacity(0.72))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.black.opacity(0.08))
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
-            }
-        }
     }
 }
 
