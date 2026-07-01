@@ -26,17 +26,17 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
                         ScreenTitle(
-                            eyebrow: "Settings",
-                            title: "Data",
-                            subtitle: "Export everything to one JSON backup or import data from an existing backup."
+                            eyebrow: L10n.tr("Settings"),
+                            title: L10n.tr("Data"),
+                            subtitle: L10n.tr("Export everything to one JSON backup or import data from an existing backup.")
                         )
 
                         VStack(alignment: .leading, spacing: 16) {
                             HStack(alignment: .top) {
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text("Backup your data")
+                                    Text(L10n.tr("Backup your data"))
                                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                                    Text("Keep your collections safe and restore them on a new install whenever you need.")
+                                    Text(L10n.tr("Keep your collections safe and restore them on a new install whenever you need."))
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
                                 }
@@ -53,7 +53,7 @@ struct SettingsView: View {
                                     dismiss()
                                     onExport()
                                 } label: {
-                                    Label("Export JSON", systemImage: "square.and.arrow.up")
+                                    Label(L10n.tr("Export JSON"), systemImage: "square.and.arrow.up")
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.borderedProminent)
@@ -63,7 +63,7 @@ struct SettingsView: View {
                                     dismiss()
                                     onImport()
                                 } label: {
-                                    Label("Import JSON", systemImage: "square.and.arrow.down")
+                                    Label(L10n.tr("Import JSON"), systemImage: "square.and.arrow.down")
                                         .frame(maxWidth: .infinity)
                                 }
                                 .buttonStyle(.bordered)
@@ -86,7 +86,7 @@ struct SettingsView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Close") {
+                    Button(L10n.tr("Close")) {
                         dismiss()
                     }
                 }

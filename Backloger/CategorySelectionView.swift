@@ -36,9 +36,9 @@ struct CategorySelectionView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 22) {
                         ScreenTitle(
-                            eyebrow: isFirstLaunch ? "First Launch" : "Manage Categories",
-                            title: "Choose Collections",
-                            subtitle: isFirstLaunch ? "Select everything you collect. You can choose more than one." : "Add or remove collection categories whenever your interests change."
+                            eyebrow: isFirstLaunch ? L10n.tr("First Launch") : L10n.tr("Manage Categories"),
+                            title: L10n.tr("Choose Collections"),
+                            subtitle: isFirstLaunch ? L10n.tr("Select everything you collect. You can choose more than one.") : L10n.tr("Add or remove collection categories whenever your interests change.")
                         )
 
                         orderNote
@@ -57,14 +57,14 @@ struct CategorySelectionView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     if !isFirstLaunch {
-                        Button("Cancel") {
+                        Button(L10n.tr("Cancel")) {
                             dismiss()
                         }
                     }
                 }
 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isFirstLaunch ? "Continue" : "Save") {
+                    Button(isFirstLaunch ? L10n.tr("Continue") : L10n.tr("Save")) {
                         onSave(workingSelection, true)
                     }
                     .disabled(isSaveDisabled)
@@ -75,10 +75,10 @@ struct CategorySelectionView: View {
 
     private var orderNote: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Order")
+            Text(L10n.tr("Order"))
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
-            Text("Selected collections can be reordered later from the main screen by holding an item and moving your finger up or down.")
+            Text(L10n.tr("Selected collections can be reordered later from the main screen by holding an item and moving your finger up or down."))
                 .font(.subheadline)
                 .foregroundStyle(Color.white.opacity(0.78))
         }

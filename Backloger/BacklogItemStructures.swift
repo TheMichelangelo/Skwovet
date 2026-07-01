@@ -397,9 +397,9 @@ enum CompleteCategory: String, CaseIterable, Identifiable, Codable {
     var title: String {
         switch self {
         case .completed:
-            return "Completed"
+            return L10n.tr("Completed")
         case .uncompleted:
-            return "Open"
+            return L10n.tr("Open")
         }
     }
 }
@@ -418,19 +418,19 @@ enum Category: String, CaseIterable, Identifiable, Codable {
     var title: String {
         switch self {
         case .games:
-            return "Games"
+            return L10n.tr("Games")
         case .books:
-            return "Books"
+            return L10n.tr("Books")
         case .comics:
-            return "Comics"
+            return L10n.tr("Comics")
         case .lego:
-            return "LEGO"
+            return L10n.tr("LEGO")
         case .boardGames:
-            return "Board Games"
+            return L10n.tr("Board Games")
         case .activities:
-            return "Activities"
+            return L10n.tr("Activities")
         case .miniaturePainting:
-            return "Miniature Painting"
+            return L10n.tr("Miniature Painting")
         }
     }
 
@@ -456,100 +456,100 @@ enum Category: String, CaseIterable, Identifiable, Codable {
     var subtitle: String {
         switch self {
         case .games:
-            return "Track what you want to play and what you already finished."
+            return L10n.tr("Track what you want to play and what you already finished.")
         case .books:
-            return "Keep your reading list and mark books as read."
+            return L10n.tr("Keep your reading list and mark books as read.")
         case .comics:
-            return "Follow comic runs and mark issues or volumes as read."
+            return L10n.tr("Follow comic runs and mark issues or volumes as read.")
         case .lego:
-            return "Track sets you want to build and what is already completed."
+            return L10n.tr("Track sets you want to build and what is already completed.")
         case .boardGames:
-            return "Keep board games organized by played and not played."
+            return L10n.tr("Keep board games organized by played and not played.")
         case .activities:
-            return "Track activities you want to try and the ones you already finished."
+            return L10n.tr("Track activities you want to try and the ones you already finished.")
         case .miniaturePainting:
-            return "Keep miniature painting projects organized from unpainted to finished."
+            return L10n.tr("Keep miniature painting projects organized from unpainted to finished.")
         }
     }
 
     var addPlaceholder: String {
         switch self {
         case .games:
-            return "Add a game"
+            return L10n.tr("Add a game")
         case .books:
-            return "Add a book"
+            return L10n.tr("Add a book")
         case .comics:
-            return "Add a comic"
+            return L10n.tr("Add a comic")
         case .lego:
-            return "Add a LEGO set"
+            return L10n.tr("Add a LEGO set")
         case .boardGames:
-            return "Add a board game"
+            return L10n.tr("Add a board game")
         case .activities:
-            return "Add an activity"
+            return L10n.tr("Add an activity")
         case .miniaturePainting:
-            return "Add a miniature project"
+            return L10n.tr("Add a miniature project")
         }
     }
 
     var completedItemLabel: String {
         switch self {
         case .games, .boardGames:
-            return "Played"
+            return L10n.tr("Played")
         case .books, .comics:
-            return "Read"
+            return L10n.tr("Read")
         case .lego:
-            return "Built"
+            return L10n.tr("Built")
         case .activities:
-            return "Done"
+            return L10n.tr("Done")
         case .miniaturePainting:
-            return "Painted"
+            return L10n.tr("Painted")
         }
     }
 
     var openItemLabel: String {
         switch self {
         case .games, .boardGames:
-            return "Not played yet"
+            return L10n.tr("Not played yet")
         case .books, .comics:
-            return "Not read yet"
+            return L10n.tr("Not read yet")
         case .lego:
-            return "Not built yet"
+            return L10n.tr("Not built yet")
         case .activities:
-            return "Not done yet"
+            return L10n.tr("Not done yet")
         case .miniaturePainting:
-            return "Not painted yet"
+            return L10n.tr("Not painted yet")
         }
     }
 
     var completionActionTitle: String {
         switch self {
         case .games, .boardGames:
-            return "Mark Played"
+            return L10n.tr("Mark Played")
         case .books, .comics:
-            return "Mark Read"
+            return L10n.tr("Mark Read")
         case .lego:
-            return "Mark Built"
+            return L10n.tr("Mark Built")
         case .activities:
-            return "Mark Done"
+            return L10n.tr("Mark Done")
         case .miniaturePainting:
-            return "Mark Painted"
+            return L10n.tr("Mark Painted")
         }
     }
 
     var openSectionTitle: String {
         switch self {
         case .games:
-            return "To Play"
+            return L10n.tr("To Play")
         case .books, .comics:
-            return "To Read"
+            return L10n.tr("To Read")
         case .lego:
-            return "To Build"
+            return L10n.tr("To Build")
         case .boardGames:
-            return "Not Played Yet"
+            return L10n.tr("Not Played Yet")
         case .activities:
-            return "To Do"
+            return L10n.tr("To Do")
         case .miniaturePainting:
-            return "To Paint"
+            return L10n.tr("To Paint")
         }
     }
 
@@ -560,19 +560,19 @@ enum Category: String, CaseIterable, Identifiable, Codable {
     var mainScreenTitle: String {
         switch self {
         case .games:
-            return "Game Collection"
+            return L10n.tr("Game Collection")
         case .books:
-            return "Book Collection"
+            return L10n.tr("Book Collection")
         case .comics:
-            return "Comic Collection"
+            return L10n.tr("Comic Collection")
         case .lego:
-            return "LEGO Collection"
+            return L10n.tr("LEGO Collection")
         case .boardGames:
-            return "Board Games"
+            return L10n.tr("Board Games")
         case .activities:
-            return "Activities"
+            return L10n.tr("Activities")
         case .miniaturePainting:
-            return "Miniature Painting"
+            return L10n.tr("Miniature Painting")
         }
     }
 }

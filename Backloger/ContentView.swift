@@ -32,7 +32,12 @@ struct ContentView: View {
 
     private var summaryLine: String {
         let completedCount = currentBacklog.items.filter(\.complete).count
-        return "\(currentBacklog.items.count) items total, \(completedCount) \(category.completedItemLabel.lowercased())."
+        return L10n.format(
+            "%d items total, %d %@.",
+            currentBacklog.items.count,
+            completedCount,
+            category.completedItemLabel.lowercased(with: Locale.current)
+        )
     }
 
     var body: some View {
@@ -57,7 +62,7 @@ struct ContentView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
+                Button(L10n.tr("Done")) {
                     isInputFocused = false
                 }
             }
@@ -67,7 +72,7 @@ struct ContentView: View {
     private var titleSection: some View {
         Section {
             ScreenTitle(
-                eyebrow: "Collection",
+                eyebrow: L10n.tr("Collection"),
                 title: category.title,
                 subtitle: category.subtitle
             )
@@ -81,7 +86,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Collection status")
+                        Text(L10n.tr("Collection status"))
                             .font(.system(size: 20, weight: .bold, design: .rounded))
                         Text(summaryLine)
                             .font(.subheadline)
@@ -91,7 +96,7 @@ struct ContentView: View {
                     Spacer()
 
                     MetricPill(
-                        title: "Progress",
+                        title: L10n.tr("Progress"),
                         value: "\(Int((completionRatio * 100).rounded()))%",
                         tint: AppTheme.accent
                     )
@@ -102,7 +107,7 @@ struct ContentView: View {
 
                 if let highlightedItem {
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Current focus", systemImage: "sparkles")
+                        Label(L10n.tr("Current focus"), systemImage: "sparkles")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Text(highlightedItem.task)
@@ -110,7 +115,7 @@ struct ContentView: View {
                         Button {
                             setRandomItem()
                         } label: {
-                            Label("Pick Another", systemImage: "shuffle")
+                            Label(L10n.tr("Pick Another"), systemImage: "shuffle")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -119,8 +124,8 @@ struct ContentView: View {
                 } else {
                     EmptyStateCard(
                         systemImage: "party.popper.fill",
-                        title: "Nothing waiting here",
-                        message: "This collection is clear. Add something new whenever you are ready."
+                        title: L10n.tr("Nothing waiting here"),
+                        message: L10n.tr("This collection is clear. Add something new whenever you are ready.")
                     )
                 }
             }
@@ -132,7 +137,7 @@ struct ContentView: View {
 
     private var filtersSection: some View {
         Section {
-            Picker("Status", selection: $completedCategory) {
+            Picker(L10n.tr("Status"), selection: $completedCategory) {
                 ForEach(CompleteCategory.allCases) { status in
                     Text(status.title).tag(status)
                 }
@@ -148,8 +153,12 @@ struct ContentView: View {
             if filteredItems.isEmpty {
                 EmptyStateCard(
                     systemImage: completedCategory == .completed ? "checkmark.seal.fill" : "square.stack.3d.up.slash",
-                    title: completedCategory == .completed ? "Nothing marked \(category.completedItemLabel.lowercased()) yet" : "No open items",
-                    message: completedCategory == .completed ? "\(category.completedSectionTitle) items will appear here." : "Use the field below to add something worth tracking."
+                    title: completedCategory == .completed
+                        ? L10n.format("Nothing marked %@ yet", category.completedItemLabel.lowercased(with: Locale.current))
+                        : L10n.tr("No open items"),
+                    message: completedCategory == .completed
+                        ? L10n.format("%@ items will appear here.", category.completedSectionTitle)
+                        : L10n.tr("Use the field below to add something worth tracking.")
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                 .listRowBackground(Color.clear)
@@ -191,7 +200,7 @@ struct ContentView: View {
             Button(role: .destructive) {
                 removeTask(item)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(L10n.tr("Delete"), systemImage: "trash")
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {

@@ -42,7 +42,7 @@ struct ExpandableListItemView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(title)
                         .font(.headline.weight(.semibold))
-                    Text("\(items.count) activities")
+                    Text(L10n.format("%d activities", items.count))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -50,7 +50,7 @@ struct ExpandableListItemView: View {
                 Spacer()
 
                 MetricPill(
-                    title: "Done",
+                    title: L10n.tr("Done"),
                     value: "\(Int((progress * 100).rounded()))%",
                     tint: AppTheme.accent
                 )

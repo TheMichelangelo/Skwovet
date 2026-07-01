@@ -42,8 +42,8 @@ struct MainUtilityItem: Identifiable, Hashable {
 struct MainViewPresentation {
     static func collectionSummary(for selectedCount: Int) -> String {
         selectedCount == 0
-            ? "Pick at least one category to get started."
-            : "\(selectedCount) categories active on your home screen."
+            ? L10n.tr("Pick at least one category to get started.")
+            : L10n.format("%d categories active on your home screen.", selectedCount)
     }
 }
 
@@ -54,7 +54,7 @@ struct SettingsVersionFormatter {
 
         let short = resolvedShortVersion?.isEmpty == false ? resolvedShortVersion! : "1.0"
         let build = resolvedBuildNumber?.isEmpty == false ? resolvedBuildNumber! : "1"
-        return "Version \(short) (\(build))"
+        return L10n.format("Version %@ (%@)", short, build)
     }
 }
 
@@ -153,8 +153,8 @@ struct MainView: View {
             ) { result in
                 handleExport(result)
             }
-            .alert("Backup", isPresented: $isShowingTransferAlert) {
-                Button("OK", role: .cancel) { }
+            .alert(L10n.tr("Backup"), isPresented: $isShowingTransferAlert) {
+                Button(L10n.tr("OK"), role: .cancel) { }
             } message: {
                 Text(transferMessage)
             }
@@ -199,10 +199,10 @@ struct MainView: View {
             let data = try Data(contentsOf: url)
             try BacklogBackupTransfer.importBackup(from: data)
             collectionSettings = CollectionSettings.loadFromStorage()
-            transferMessage = "Backup imported successfully. Open any collection again to see the restored data."
+            transferMessage = L10n.tr("Backup imported successfully. Open any collection again to see the restored data.")
             isShowingTransferAlert = true
         } catch {
-            transferMessage = "Import failed. Please choose a valid BackLogger JSON backup."
+            transferMessage = L10n.tr("Import failed. Please choose a valid BackLogger JSON backup.")
             isShowingTransferAlert = true
         }
     }
@@ -210,9 +210,9 @@ struct MainView: View {
     private func handleExport(_ result: Result<URL, Error>) {
         switch result {
         case .success:
-            transferMessage = "Backup exported successfully."
+            transferMessage = L10n.tr("Backup exported successfully.")
         case .failure:
-            transferMessage = "Export failed. Please try again."
+            transferMessage = L10n.tr("Export failed. Please try again.")
         }
 
         isShowingTransferAlert = true
@@ -232,7 +232,8 @@ private struct MainHeaderView: View {
 
     var body: some View {
         HStack(alignment: .top) {
-            Text("My Collections")
+            Text(L10n.tr("My Collections"))
+                .textCase(nil)
                 .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
 
@@ -245,7 +246,7 @@ private struct MainHeaderView: View {
                     .padding(10)
                     .background(Color.white.opacity(0.16), in: Circle())
             }
-            .accessibilityLabel("Settings")
+            .accessibilityLabel(L10n.tr("Settings"))
         }
     }
 }
@@ -280,7 +281,7 @@ private struct CollectionOverviewCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Your collection setup")
+                    Text(L10n.tr("Your collection setup"))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                     Text(summary)
                         .font(.subheadline)
@@ -295,16 +296,13 @@ private struct CollectionOverviewCard: View {
             }
 
             HStack(spacing: 10) {
-                MetricPill(title: "Categories", value: "\(selectedCategoryCount)", tint: AppTheme.accent)
-                MetricPill(title: "Mode", value: "Flexible", tint: AppTheme.secondaryAccent)
+                Button(action: onManageCategories) {
+                    Label(L10n.tr("Add or Remove Collection"), systemImage: "slider.horizontal.3")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.accent)
             }
-
-            Button(action: onManageCategories) {
-                Label("Add or Remove Collection", systemImage: "slider.horizontal.3")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(AppTheme.accent)
         }
         .glassCard()
     }
@@ -318,15 +316,15 @@ private struct CollectionsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Collections")
+            Text(L10n.tr("Collections"))
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
 
             if categories.isEmpty {
                 EmptyStateCard(
                     systemImage: "square.stack.3d.up.slash",
-                    title: "No categories selected",
-                    message: "Add one or more collection types and they will appear here."
+                    title: L10n.tr("No categories selected"),
+                    message: L10n.tr("Add one or more collection types and they will appear here.")
                 )
             } else {
                 ForEach(categories) { category in
@@ -362,39 +360,79 @@ private struct UtilityRectangleCard: View {
     let item: MainUtilityItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center, spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(item.tint.opacity(0.14))
-                        .frame(width: 55, height: 55)
-                    Image(systemName: item.icon)
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(item.tint)
-                }
-
-                Text(item.title)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .lineSpacing(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if let subtitle = item.subtitle {
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineSpacing(1)
-            }
+        ViewThatFits(in: .horizontal) {
+            horizontalLayout
+            verticalLayout
         }
         .padding(4)
-        .frame(maxWidth: .infinity, minHeight: 115, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 150, maxHeight: 150, alignment: .topLeading)
         .contentShape(Rectangle())
         .glassCard()
+    }
+
+    private var horizontalLayout: some View {
+        VStack(alignment: .center, spacing: 14) {
+            HStack(alignment: .center, spacing: 12) {
+                iconBadge
+
+                titleText(lineLimit: 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+
+            if let subtitle = item.subtitle {
+                subtitleText(subtitle, lineLimit: 3)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private var verticalLayout: some View {
+        VStack(alignment: .center, spacing: 12) {
+            iconBadge
+
+            titleText(lineLimit: 3)
+
+            if let subtitle = item.subtitle {
+                subtitleText(subtitle, lineLimit: 3)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+    }
+
+    private var iconBadge: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(item.tint.opacity(0.14))
+                .frame(width: 55, height: 55)
+            Image(systemName: item.icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(item.tint)
+        }
+    }
+
+    private func titleText(lineLimit: Int) -> some View {
+        Text(L10n.tr(item.title))
+            .font(.system(size: 17, weight: .bold, design: .rounded))
+            .foregroundStyle(.primary)
+            .lineLimit(lineLimit)
+            .minimumScaleFactor(0.88)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .lineSpacing(1)
+            .layoutPriority(1)
+            .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private func subtitleText(_ text: String, lineLimit: Int) -> some View {
+        Text(L10n.tr(text))
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .lineLimit(lineLimit)
+            .minimumScaleFactor(0.9)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .lineSpacing(1)
     }
 }
 

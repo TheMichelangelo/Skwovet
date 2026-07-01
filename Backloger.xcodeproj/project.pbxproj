@@ -27,6 +27,8 @@
 		FC1D1A0A2F10000100A1B2C3 /* SQLiteStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */; };
 		FC2A4C6F2F20000100A1B2C3 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2A4C6E2F20000100A1B2C3 /* SettingsView.swift */; };
 		FC2A4C712F20000200A1B2C3 /* CategorySelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC2A4C702F20000200A1B2C3 /* CategorySelectionView.swift */; };
+		FC3B7D102F21000100A1B2C3 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC3B7D0F2F21000100A1B2C3 /* Localization.swift */; };
+		FC3B7D142F21000200A1B2C3 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = FC3B7D112F21000200A1B2C3 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -70,6 +72,9 @@
 		FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteStorage.swift; sourceTree = "<group>"; };
 		FC2A4C6E2F20000100A1B2C3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		FC2A4C702F20000200A1B2C3 /* CategorySelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategorySelectionView.swift; sourceTree = "<group>"; };
+		FC3B7D0F2F21000100A1B2C3 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		FC3B7D122F21000200A1B2C3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		FC3B7D132F21000200A1B2C3 /* uk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = uk; path = uk.lproj/Localizable.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,8 +135,10 @@
 				BE1BF4BB2A40F8CB0086B833 /* DayView.swift */,
 				BE1BF4C22A41CB4D0086B833 /* ExpandableListItemView.swift */,
 				FC0D0F292D4A1001000A1B2C /* AppTheme.swift */,
+				FC3B7D0F2F21000100A1B2C3 /* Localization.swift */,
 				FC1D1A072F10000000A1B2C3 /* BacklogBackup.swift */,
 				FC1D1A092F10000100A1B2C3 /* SQLiteStorage.swift */,
+				FC3B7D112F21000200A1B2C3 /* Localizable.strings */,
 				BE1BF48F2A3F8A8B0086B833 /* Assets.xcassets */,
 				BE1BF4C02A4113F80086B833 /* logo.png */,
 				BE1BF4912A3F8A8B0086B833 /* Preview Content */,
@@ -167,6 +174,18 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXVariantGroup section */
+		FC3B7D112F21000200A1B2C3 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				FC3B7D122F21000200A1B2C3 /* en */,
+				FC3B7D132F21000200A1B2C3 /* uk */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXNativeTarget section */
 		BE1BF4872A3F8A8A0086B833 /* Backloger */ = {
@@ -252,6 +271,7 @@
 			knownRegions = (
 				en,
 				Base,
+				uk,
 			);
 			mainGroup = BE1BF47F2A3F8A8A0086B833;
 			productRefGroup = BE1BF4892A3F8A8A0086B833 /* Products */;
@@ -272,6 +292,7 @@
 			files = (
 				BE1BF4932A3F8A8B0086B833 /* Preview Assets.xcassets in Resources */,
 				BE1BF4902A3F8A8B0086B833 /* Assets.xcassets in Resources */,
+				FC3B7D142F21000200A1B2C3 /* Localizable.strings in Resources */,
 				BE1BF4C12A4113F80086B833 /* logo.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -300,6 +321,7 @@
 				BEC671A32A42425100C056F2 /* ShopListView.swift in Sources */,
 				BE1BF4BC2A40F8CB0086B833 /* DayView.swift in Sources */,
 				BE1BF4BF2A40FCD80086B833 /* ContentView.swift in Sources */,
+				FC3B7D102F21000100A1B2C3 /* Localization.swift in Sources */,
 				BE1BF48E2A3F8A8A0086B833 /* MainView.swift in Sources */,
 				FC2A4C6F2F20000100A1B2C3 /* SettingsView.swift in Sources */,
 				FC2A4C712F20000200A1B2C3 /* CategorySelectionView.swift in Sources */,
