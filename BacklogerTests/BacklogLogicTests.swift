@@ -44,6 +44,27 @@ final class BacklogLogicTests: XCTestCase {
         )
     }
 
+    func testCollectionSettingsDefaultsToAlphabeticalSelectionOrder() {
+        let settings = CollectionSettings(
+            selectedCategories: [.miniaturePainting, .books, .activities],
+            hasCompletedOnboarding: false
+        )
+
+        XCTAssertEqual(settings.selectedCategories, [.activities, .books, .miniaturePainting])
+    }
+
+    func testCollectionSettingsPreservesManualOrderWhenAddingNewCategory() {
+        let settings = CollectionSettings(
+            selectedCategories: [.games, .books, .lego],
+            hasCompletedOnboarding: true
+        )
+        let reordered = settings.movedSelectedCategories(from: IndexSet(integer: 2), to: 0)
+
+        let updated = reordered.updatedSelection([.lego, .games, .books, .activities])
+
+        XCTAssertEqual(updated.selectedCategories, [.lego, .games, .books, .activities])
+    }
+
     func testListForCategoryReturnsMatchingStoredList() {
         let allLists = BacklogListAll()
         let games = BacklogItem(task: "Zelda")

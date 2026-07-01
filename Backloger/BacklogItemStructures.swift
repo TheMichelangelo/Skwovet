@@ -207,16 +207,37 @@ struct CollectionSettings: Codable, Hashable {
 
     init(
         selectedCategories: [Category] = [],
-        hasCompletedOnboarding: Bool = false
+        hasCompletedOnboarding: Bool = false,
+        preserveOrder: Bool = false
     ) {
-        self.selectedCategories = Self.normalized(selectedCategories)
+        self.selectedCategories = preserveOrder ? Self.validated(selectedCategories) : Self.normalized(selectedCategories)
         self.hasCompletedOnboarding = hasCompletedOnboarding
     }
 
     func updatedSelection(_ categories: [Category], completedOnboarding: Bool? = nil) -> CollectionSettings {
         CollectionSettings(
-            selectedCategories: Self.normalized(categories),
-            hasCompletedOnboarding: completedOnboarding ?? hasCompletedOnboarding
+            selectedCategories: Self.updatedOrder(
+                existing: selectedCategories,
+                incoming: categories
+            ),
+            hasCompletedOnboarding: completedOnboarding ?? hasCompletedOnboarding,
+            preserveOrder: true
+        )
+    }
+
+    func movedSelectedCategories(from source: IndexSet, to destination: Int) -> CollectionSettings {
+        var reordered = selectedCategories
+        let movingItems = source.map { reordered[$0] }
+        for index in source.sorted(by: >) {
+            reordered.remove(at: index)
+        }
+
+        let insertionIndex = min(destination, reordered.count)
+        reordered.insert(contentsOf: movingItems, at: insertionIndex)
+        return CollectionSettings(
+            selectedCategories: reordered,
+            hasCompletedOnboarding: hasCompletedOnboarding,
+            preserveOrder: true
         )
     }
 
@@ -239,8 +260,26 @@ struct CollectionSettings: Codable, Hashable {
         saveCodableValue(settings, forKey: StorageKey.collectionSettings, database: database)
     }
 
+    private static func validated(_ categories: [Category]) -> [Category] {
+        var seen = Set<Category>()
+        return categories.filter { category in
+            guard Category.allCases.contains(category), !seen.contains(category) else {
+                return false
+            }
+            seen.insert(category)
+            return true
+        }
+    }
+
     private static func normalized(_ categories: [Category]) -> [Category] {
-        Category.allCases.filter { categories.contains($0) }
+        validated(categories)
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+
+    private static func updatedOrder(existing: [Category], incoming: [Category]) -> [Category] {
+        let retained = existing.filter { incoming.contains($0) }
+        let newCategories = normalized(incoming.filter { !existing.contains($0) })
+        return retained + newCategories
     }
 }
 

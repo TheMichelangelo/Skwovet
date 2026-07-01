@@ -99,7 +99,11 @@ struct MainView: View {
                             selectedCategoryCount: selectedCategories.count,
                             onManageCategories: { isShowingCategoryManager = true }
                         )
-                        CollectionsSection(categories: selectedCategories)
+                        CollectionsSection(
+                            categories: selectedCategories,
+                            onMoveCategory: moveCategory,
+                            onPersistCategoryOrder: persistCategoryOrder
+                        )
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
@@ -213,6 +217,14 @@ struct MainView: View {
 
         isShowingTransferAlert = true
     }
+
+    private func moveCategory(from source: IndexSet, to destination: Int) {
+        collectionSettings = collectionSettings.movedSelectedCategories(from: source, to: destination)
+    }
+
+    private func persistCategoryOrder() {
+        CollectionSettings.saveToStorage(settings: collectionSettings)
+    }
 }
 
 private struct MainHeaderView: View {
@@ -300,6 +312,9 @@ private struct CollectionOverviewCard: View {
 
 private struct CollectionsSection: View {
     let categories: [Category]
+    let onMoveCategory: (IndexSet, Int) -> Void
+    let onPersistCategoryOrder: () -> Void
+    @State private var draggedCategory: Category?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -317,13 +332,27 @@ private struct CollectionsSection: View {
                 ForEach(categories) { category in
                     NavigationLink(value: MainDestination.collection(category)) {
                         HomeCard(
-                            title: category.mainScreenTitle,
-                            subtitle: category.subtitle,
+                            title: category.title,
                             icon: category.symbolName,
                             tint: AppTheme.accent
                         )
                     }
                     .buttonStyle(.plain)
+                    .opacity(draggedCategory == category ? 0.65 : 1)
+                    .onDrag {
+                        draggedCategory = category
+                        return NSItemProvider(object: NSString(string: category.rawValue))
+                    }
+                    .onDrop(
+                        of: [UTType.plainText],
+                        delegate: CollectionOrderDropDelegate(
+                            destinationItem: category,
+                            items: categories,
+                            draggedItem: $draggedCategory,
+                            onMove: onMoveCategory,
+                            onPersist: onPersistCategoryOrder
+                        )
+                    )
                 }
             }
         }
@@ -372,7 +401,6 @@ private struct UtilityRectangleCard: View {
 
 private struct HomeCard: View {
     let title: String
-    let subtitle: String
     let icon: String
     let tint: Color
 
@@ -391,10 +419,6 @@ private struct HomeCard: View {
                 Text(title)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(.primary)
-                Text(subtitle)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -438,6 +462,8 @@ private struct CategorySelectionView: View {
                             subtitle: isFirstLaunch ? "Select everything you collect. You can choose more than one." : "Add or remove collection categories whenever your interests change."
                         )
 
+                        orderNote
+
                         VStack(spacing: 14) {
                             ForEach(Category.allCases) { category in
                                 categoryButton(for: category)
@@ -466,6 +492,18 @@ private struct CategorySelectionView: View {
                 }
             }
         }
+    }
+
+    private var orderNote: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Order")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+            Text("Selected collections can be reordered later from the main screen by holding an item and moving your finger up or down.")
+                .font(.subheadline)
+                .foregroundStyle(Color.white.opacity(0.78))
+        }
+        .padding(.horizontal, 20)
     }
 
     private func categoryButton(for category: Category) -> some View {
@@ -510,10 +548,50 @@ private struct CategorySelectionView: View {
         if workingSelection.contains(category) {
             workingSelection.removeAll { $0 == category }
         } else {
-            workingSelection.append(category)
+            let currentSettings = CollectionSettings(
+                selectedCategories: workingSelection,
+                hasCompletedOnboarding: isFirstLaunch
+            )
+            workingSelection = currentSettings.updatedSelection(workingSelection + [category]).selectedCategories
+            return
         }
 
-        workingSelection = Category.allCases.filter { workingSelection.contains($0) }
+        let currentSettings = CollectionSettings(
+            selectedCategories: workingSelection,
+            hasCompletedOnboarding: isFirstLaunch
+        )
+        workingSelection = currentSettings.updatedSelection(workingSelection).selectedCategories
+    }
+}
+
+private struct CollectionOrderDropDelegate: DropDelegate {
+    let destinationItem: Category
+    let items: [Category]
+    @Binding var draggedItem: Category?
+    let onMove: (IndexSet, Int) -> Void
+    let onPersist: () -> Void
+
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem,
+              draggedItem != destinationItem,
+              let fromIndex = items.firstIndex(of: draggedItem),
+              let toIndex = items.firstIndex(of: destinationItem) else {
+            return
+        }
+
+        withAnimation {
+            onMove(IndexSet(integer: fromIndex), toIndex > fromIndex ? toIndex + 1 : toIndex)
+        }
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        draggedItem = nil
+        onPersist()
+        return true
     }
 }
 
