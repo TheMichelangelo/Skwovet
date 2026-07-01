@@ -6,15 +6,16 @@
 import SwiftUI
 
 struct ContentView: View {
+    let category: Category
+
     @State private var backlogList = BacklogListAll.loadFromStorage()
-    @State private var selectedCategory: Category = .comics
     @State private var completedCategory: CompleteCategory = .uncompleted
     @State private var newTask = ""
     @State private var refreshTick = 0
     @FocusState private var isInputFocused: Bool
 
     private var currentBacklog: BacklogList {
-        backlogList.list(for: selectedCategory)
+        backlogList.list(for: category)
     }
 
     private var filteredItems: [BacklogItem] {
@@ -27,6 +28,16 @@ struct ContentView: View {
 
     private var highlightedItem: BacklogItem? {
         BacklogLogic.highlightedItem(in: currentBacklog)
+    }
+
+    private var summaryLine: String {
+        let completedCount = currentBacklog.items.filter(\.complete).count
+        return L10n.format(
+            "%d items total, %d %@.",
+            currentBacklog.items.count,
+            completedCount,
+            category.completedItemLabel.lowercased(with: Locale.current)
+        )
     }
 
     var body: some View {
@@ -43,29 +54,15 @@ struct ContentView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Backlog")
+        .navigationTitle(category.title)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             composerBar
         }
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Picker("Category", selection: $selectedCategory) {
-                        ForEach(Category.allCases) { category in
-                            Label(category.title, systemImage: category.symbolName)
-                                .tag(category)
-                        }
-                    }
-                } label: {
-                    Label(selectedCategory.title, systemImage: selectedCategory.symbolName)
-                        .labelStyle(.titleAndIcon)
-                }
-            }
-
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
+                Button(L10n.tr("Done")) {
                     isInputFocused = false
                 }
             }
@@ -75,9 +72,9 @@ struct ContentView: View {
     private var titleSection: some View {
         Section {
             ScreenTitle(
-                eyebrow: "Backlog",
-                title: selectedCategory.title,
-                subtitle: "Sort the list, finish the next thing, or let the app pick one for you."
+                eyebrow: L10n.tr("Collection"),
+                title: category.title,
+                subtitle: category.subtitle
             )
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
@@ -89,9 +86,9 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Collection status")
+                        Text(L10n.tr("Collection status"))
                             .font(.system(size: 20, weight: .bold, design: .rounded))
-                        Text("\(currentBacklog.items.count) items total, \(currentBacklog.items.filter(\.complete).count) finished.")
+                        Text(summaryLine)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -99,7 +96,7 @@ struct ContentView: View {
                     Spacer()
 
                     MetricPill(
-                        title: "Progress",
+                        title: L10n.tr("Progress"),
                         value: "\(Int((completionRatio * 100).rounded()))%",
                         tint: AppTheme.accent
                     )
@@ -110,7 +107,7 @@ struct ContentView: View {
 
                 if let highlightedItem {
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Current focus", systemImage: "sparkles")
+                        Label(L10n.tr("Current focus"), systemImage: "sparkles")
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Text(highlightedItem.task)
@@ -118,7 +115,7 @@ struct ContentView: View {
                         Button {
                             setRandomItem()
                         } label: {
-                            Label("Pick Another", systemImage: "shuffle")
+                            Label(L10n.tr("Pick Another"), systemImage: "shuffle")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
@@ -127,8 +124,8 @@ struct ContentView: View {
                 } else {
                     EmptyStateCard(
                         systemImage: "party.popper.fill",
-                        title: "Nothing open here",
-                        message: "This category is clear. Add a fresh item when you are ready for the next one."
+                        title: L10n.tr("Nothing waiting here"),
+                        message: L10n.tr("This collection is clear. Add something new whenever you are ready.")
                     )
                 }
             }
@@ -140,9 +137,9 @@ struct ContentView: View {
 
     private var filtersSection: some View {
         Section {
-            Picker("Status", selection: $completedCategory) {
-                ForEach(CompleteCategory.allCases) { category in
-                    Text(category.title).tag(category)
+            Picker(L10n.tr("Status"), selection: $completedCategory) {
+                ForEach(CompleteCategory.allCases) { status in
+                    Text(status.title).tag(status)
                 }
             }
             .pickerStyle(.segmented)
@@ -156,8 +153,12 @@ struct ContentView: View {
             if filteredItems.isEmpty {
                 EmptyStateCard(
                     systemImage: completedCategory == .completed ? "checkmark.seal.fill" : "square.stack.3d.up.slash",
-                    title: completedCategory == .completed ? "No completed items yet" : "No open items",
-                    message: completedCategory == .completed ? "Completed backlog items will appear here." : "Use the field below to add something worth tracking."
+                    title: completedCategory == .completed
+                        ? L10n.format("Nothing marked %@ yet", category.completedItemLabel.lowercased(with: Locale.current))
+                        : L10n.tr("No open items"),
+                    message: completedCategory == .completed
+                        ? L10n.format("%@ items will appear here.", category.completedSectionTitle)
+                        : L10n.tr("Use the field below to add something worth tracking.")
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                 .listRowBackground(Color.clear)
@@ -169,7 +170,7 @@ struct ContentView: View {
                 }
             }
         } header: {
-            Text(completedCategory == .completed ? "Finished" : "Open Items")
+            Text(completedCategory == .completed ? category.completedSectionTitle : category.openSectionTitle)
         }
     }
 
@@ -182,7 +183,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.task)
                     .font(.body.weight(.medium))
-                Text(item.complete ? "Completed" : "In progress")
+                Text(item.complete ? category.completedItemLabel : category.openItemLabel)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -199,7 +200,7 @@ struct ContentView: View {
             Button(role: .destructive) {
                 removeTask(item)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(L10n.tr("Delete"), systemImage: "trash")
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -207,7 +208,7 @@ struct ContentView: View {
                 Button {
                     completeTask(item)
                 } label: {
-                    Label("Done", systemImage: "checkmark")
+                    Label(category.completionActionTitle, systemImage: "checkmark")
                 }
                 .tint(AppTheme.secondaryAccent)
             }
@@ -216,7 +217,7 @@ struct ContentView: View {
 
     private var composerBar: some View {
         HStack(spacing: 12) {
-            TextField("Add a new backlog item", text: $newTask)
+            TextField(category.addPlaceholder, text: $newTask)
                 .textInputAutocapitalization(.sentences)
                 .autocorrectionDisabled()
                 .submitLabel(.done)
@@ -258,6 +259,7 @@ struct ContentView: View {
         guard BacklogLogic.setRandomCurrentItem(in: currentBacklog) != nil else {
             return
         }
+
         BacklogListAll.saveToStorage(backlogList: backlogList)
         refreshTick += 1
     }
@@ -277,6 +279,6 @@ struct ContentView: View {
 
 #Preview {
     NavigationStack {
-        ContentView()
+        ContentView(category: .games)
     }
 }

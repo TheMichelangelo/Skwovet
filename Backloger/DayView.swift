@@ -46,7 +46,7 @@ struct DayView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Today")
+        .navigationTitle(L10n.tr("Today"))
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             composerBar
@@ -54,7 +54,7 @@ struct DayView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
+                Button(L10n.tr("Done")) {
                     isInputFocused = false
                 }
             }
@@ -64,9 +64,9 @@ struct DayView: View {
     private var titleSection: some View {
         Section {
             ScreenTitle(
-                eyebrow: "Daily Focus",
-                title: "Today",
-                subtitle: "Unfinished activities roll forward so the plan stays realistic."
+                eyebrow: L10n.tr("Daily Focus"),
+                title: L10n.tr("Today"),
+                subtitle: L10n.tr("Unfinished activities roll forward so the plan stays realistic.")
             )
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
@@ -78,9 +78,9 @@ struct DayView: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Today's rhythm")
+                        Text(L10n.tr("Today's rhythm"))
                             .font(.system(size: 20, weight: .bold, design: .rounded))
-                        Text("\(openItems.count) open activities left for today.")
+                        Text(L10n.format("%d open activities left for today.", openItems.count))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -88,7 +88,7 @@ struct DayView: View {
                     Spacer()
 
                     MetricPill(
-                        title: "Progress",
+                        title: L10n.tr("Progress"),
                         value: "\(Int((progress * 100).rounded()))%",
                         tint: AppTheme.warmAccent
                     )
@@ -100,8 +100,8 @@ struct DayView: View {
                 if openItems.isEmpty {
                     EmptyStateCard(
                         systemImage: "sun.max.fill",
-                        title: "Today is clear",
-                        message: "Everything scheduled for today is done. Add another activity if you want to keep the streak going."
+                        title: L10n.tr("Today is clear"),
+                        message: L10n.tr("Everything scheduled for today is done. Add another activity if you want to keep the streak going.")
                     )
                 } else {
                     VStack(spacing: 12) {
@@ -118,12 +118,12 @@ struct DayView: View {
     }
 
     private var historySection: some View {
-        Section("History") {
+        Section(L10n.tr("History")) {
             if previousDays.isEmpty {
                 EmptyStateCard(
                     systemImage: "clock.arrow.circlepath",
-                    title: "No history yet",
-                    message: "Older daily lists will appear here as you use the app."
+                    title: L10n.tr("No history yet"),
+                    message: L10n.tr("Older daily lists will appear here as you use the app.")
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                 .listRowBackground(Color.clear)
@@ -161,14 +161,14 @@ struct DayView: View {
             Button(role: .destructive) {
                 removeTask(item)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(L10n.tr("Delete"), systemImage: "trash")
             }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button {
                 completeTask(item)
             } label: {
-                Label("Done", systemImage: "checkmark")
+                Label(L10n.tr("Done"), systemImage: "checkmark")
             }
             .tint(AppTheme.secondaryAccent)
         }
@@ -176,7 +176,7 @@ struct DayView: View {
 
     private var composerBar: some View {
         HStack(spacing: 12) {
-            TextField("Add a new activity", text: $newTask)
+            TextField(L10n.tr("Add a new activity"), text: $newTask)
                 .textInputAutocapitalization(.sentences)
                 .autocorrectionDisabled()
                 .submitLabel(.done)

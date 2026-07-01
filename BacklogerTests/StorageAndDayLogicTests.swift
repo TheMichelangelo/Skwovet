@@ -26,12 +26,31 @@ final class StorageAndDayLogicTests: XCTestCase {
 
     func testBacklogStorageRoundTripPersistsItems() {
         let allLists = BacklogListAll()
+        allLists.gameItems.items = [BacklogItem(task: "Mass Effect")]
         allLists.bookItems.items = [BacklogItem(task: "Dune")]
+        allLists.activityCollectionItems.items = [BacklogItem(task: "Hiking")]
+        allLists.miniaturePaintingItems.items = [BacklogItem(task: "Goblin Shaman")]
 
         BacklogListAll.saveToStorage(backlogList: allLists, database: database)
         let loaded = BacklogListAll.loadFromStorage(database: database)
 
+        XCTAssertEqual(loaded.gameItems.items.map(\.task), ["Mass Effect"])
         XCTAssertEqual(loaded.bookItems.items.map(\.task), ["Dune"])
+        XCTAssertEqual(loaded.activityCollectionItems.items.map(\.task), ["Hiking"])
+        XCTAssertEqual(loaded.miniaturePaintingItems.items.map(\.task), ["Goblin Shaman"])
+    }
+
+    func testCollectionSettingsRoundTripPersistsSelection() {
+        let settings = CollectionSettings(
+            selectedCategories: [.games, .books, .lego],
+            hasCompletedOnboarding: true
+        )
+
+        CollectionSettings.saveToStorage(settings: settings, database: database)
+        let loaded = CollectionSettings.loadFromStorage(database: database)
+
+        XCTAssertEqual(loaded.selectedCategories, [.games, .books, .lego])
+        XCTAssertTrue(loaded.hasCompletedOnboarding)
     }
 
     func testActivityStorageRoundTripPersistsDays() {
@@ -119,6 +138,38 @@ final class StorageAndDayLogicTests: XCTestCase {
         XCTAssertEqual(sqliteOnlyLoaded.bookItems.items.map(\.task), ["Foundation"])
     }
 
+    func testBacklogStorageMergesLegacyPlatformSpecificGameLists() throws {
+        struct LegacyBacklogListAll: Encodable {
+            let bookItems = BacklogList()
+            let comicsItems = BacklogList()
+            let playstationGameItems: BacklogList
+            let xboxGameItems: BacklogList
+            let switchGameItems = BacklogList()
+            let pcGameItems = BacklogList()
+        }
+
+        let playstation = BacklogList()
+        playstation.items = [BacklogItem(task: "Spider-Man")]
+        playstation.currentItem = playstation.items[0]
+
+        let xbox = BacklogList()
+        xbox.items = [BacklogItem(task: "Halo")]
+        xbox.currentItem = xbox.items[0]
+
+        let legacyPayload = try JSONEncoder().encode(
+            LegacyBacklogListAll(
+                playstationGameItems: playstation,
+                xboxGameItems: xbox
+            )
+        )
+
+        store.set(legacyPayload, forKey: StorageKey.backlogList)
+
+        let loaded = BacklogListAll.loadFromStorage(database: database, legacyStore: store)
+
+        XCTAssertEqual(loaded.gameItems.items.map(\.task), ["Halo", "Spider-Man"])
+    }
+
     func testBackupDocumentRoundTripPreservesAllStoredCollections() throws {
         let backlog = BacklogListAll()
         backlog.bookItems.items = [BacklogItem(task: "Hyperion")]
@@ -138,6 +189,7 @@ final class StorageAndDayLogicTests: XCTestCase {
         let restoredBackup = try decoder.decode(BacklogBackup.self, from: restoredData)
 
         XCTAssertEqual(restoredBackup.backlogList.bookItems.items.map(\.task), ["Hyperion"])
+        XCTAssertEqual(restoredBackup.collectionSettings.selectedCategories, [])
         XCTAssertEqual(restoredBackup.activityBacklogList.days.first?.items.map(\.task), ["Run"])
         XCTAssertEqual(restoredBackup.buyItems.map(\.task), ["Headphones"])
     }
@@ -145,6 +197,7 @@ final class StorageAndDayLogicTests: XCTestCase {
     func testImportBackupReplacesPersistedData() {
         let importedBacklog = BacklogListAll()
         importedBacklog.comicsItems.items = [BacklogItem(task: "Saga")]
+        let importedSettings = CollectionSettings(selectedCategories: [.comics, .boardGames], hasCompletedOnboarding: true)
 
         let importedActivity = ActivityBacklogListAll()
         importedActivity.days = [DayActivityBacklogList(items: [ActivityBacklogItem(task: "Stretch")])]
@@ -154,6 +207,7 @@ final class StorageAndDayLogicTests: XCTestCase {
         let document = BacklogBackupDocument(
             backup: BacklogBackup(
                 backlogList: importedBacklog,
+                collectionSettings: importedSettings,
                 activityBacklogList: importedActivity,
                 buyItems: importedBuyItems
             )
@@ -164,6 +218,10 @@ final class StorageAndDayLogicTests: XCTestCase {
         XCTAssertEqual(
             BacklogListAll.loadFromStorage(database: database).comicsItems.items.map(\.task),
             ["Saga"]
+        )
+        XCTAssertEqual(
+            CollectionSettings.loadFromStorage(database: database).selectedCategories,
+            [.comics, .boardGames]
         )
         XCTAssertEqual(
             ActivityBacklogListAll.loadFromStorage(database: database).days.first?.items.map(\.task),

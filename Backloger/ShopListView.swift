@@ -22,7 +22,7 @@ struct ShopListView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Buy List")
+        .navigationTitle(L10n.tr("Wishlist"))
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             composerBar
@@ -30,7 +30,7 @@ struct ShopListView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") {
+                Button(L10n.tr("Done")) {
                     isInputFocused = false
                 }
             }
@@ -40,9 +40,9 @@ struct ShopListView: View {
     private var titleSection: some View {
         Section {
             ScreenTitle(
-                eyebrow: "Shopping",
-                title: "Buy List",
-                subtitle: "A quick place to park purchases before they disappear from your head."
+                eyebrow: L10n.tr("Shopping"),
+                title: L10n.tr("Wishlist"),
+                subtitle: L10n.tr("A quick place to park purchases before they disappear from your head.")
             )
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
@@ -53,9 +53,9 @@ struct ShopListView: View {
         Section {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Ready to pick up")
+                    Text(L10n.tr("Ready to pick up"))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                    Text(items.isEmpty ? "Your list is empty right now." : "\(items.count) items waiting.")
+                    Text(items.isEmpty ? L10n.tr("Your list is empty right now.") : L10n.format("%d items waiting.", items.count))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -63,7 +63,7 @@ struct ShopListView: View {
                 Spacer()
 
                 MetricPill(
-                    title: "Count",
+                    title: L10n.tr("Count"),
                     value: "\(items.count)",
                     tint: AppTheme.secondaryAccent
                 )
@@ -75,12 +75,12 @@ struct ShopListView: View {
     }
 
     private var itemsSection: some View {
-        Section("Items") {
+        Section(L10n.tr("Items")) {
             if items.isEmpty {
                 EmptyStateCard(
                     systemImage: "bag.badge.plus",
-                    title: "Nothing to buy",
-                    message: "Add an item below and it will show up here."
+                    title: L10n.tr("Nothing to buy"),
+                    message: L10n.tr("Add an item below and it will show up here.")
                 )
                 .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
                 .listRowBackground(Color.clear)
@@ -104,7 +104,7 @@ struct ShopListView: View {
                         Button(role: .destructive) {
                             removeTask(item)
                         } label: {
-                            Label("Delete", systemImage: "trash")
+                            Label(L10n.tr("Delete"), systemImage: "trash")
                         }
                     }
                     .listRowSeparator(.hidden)
@@ -116,7 +116,7 @@ struct ShopListView: View {
 
     private var composerBar: some View {
         HStack(spacing: 12) {
-            TextField("Add a new item", text: $newTask)
+            TextField(L10n.tr("Add a new item"), text: $newTask)
                 .textInputAutocapitalization(.sentences)
                 .autocorrectionDisabled()
                 .submitLabel(.done)
