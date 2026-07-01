@@ -405,12 +405,12 @@ enum CompleteCategory: String, CaseIterable, Identifiable, Codable {
 }
 
 enum Category: String, CaseIterable, Identifiable, Codable {
-    case games
+    case activities
+    case boardGames
     case books
     case comics
+    case games
     case lego
-    case boardGames
-    case activities
     case miniaturePainting
 
     var id: Self { self }
