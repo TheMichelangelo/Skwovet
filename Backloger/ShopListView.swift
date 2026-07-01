@@ -22,7 +22,7 @@ struct ShopListView: View {
             .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
         }
-        .navigationTitle("Buy List")
+        .navigationTitle("Wishlist")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
             composerBar
@@ -41,7 +41,7 @@ struct ShopListView: View {
         Section {
             ScreenTitle(
                 eyebrow: "Shopping",
-                title: "Buy List",
+                title: "Wishlist",
                 subtitle: "A quick place to park purchases before they disappear from your head."
             )
             .listRowInsets(EdgeInsets())

@@ -477,7 +477,7 @@ enum Category: String, CaseIterable, Identifiable, Codable {
         case .lego:
             return "LEGO Collection"
         case .boardGames:
-            return "Board Game Collection"
+            return "Board Games"
         }
     }
 }
