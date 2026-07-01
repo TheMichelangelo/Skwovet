@@ -10,19 +10,40 @@ import UniformTypeIdentifiers
 struct BacklogBackup: Codable {
     var exportedAt: Date
     var backlogList: BacklogListAll
+    var collectionSettings: CollectionSettings
     var activityBacklogList: ActivityBacklogListAll
     var buyItems: [BacklogItem]
+
+    private enum CodingKeys: String, CodingKey {
+        case exportedAt
+        case backlogList
+        case collectionSettings
+        case activityBacklogList
+        case buyItems
+    }
 
     init(
         exportedAt: Date = Date(),
         backlogList: BacklogListAll,
+        collectionSettings: CollectionSettings,
         activityBacklogList: ActivityBacklogListAll,
         buyItems: [BacklogItem]
     ) {
         self.exportedAt = exportedAt
         self.backlogList = backlogList
+        self.collectionSettings = collectionSettings
         self.activityBacklogList = activityBacklogList
         self.buyItems = buyItems
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        exportedAt = try container.decode(Date.self, forKey: .exportedAt)
+        backlogList = try container.decode(BacklogListAll.self, forKey: .backlogList)
+        collectionSettings = try container.decodeIfPresent(CollectionSettings.self, forKey: .collectionSettings)
+            ?? CollectionSettings()
+        activityBacklogList = try container.decode(ActivityBacklogListAll.self, forKey: .activityBacklogList)
+        buyItems = try container.decode([BacklogItem].self, forKey: .buyItems)
     }
 }
 
@@ -62,6 +83,7 @@ enum BacklogBackupTransfer {
         BacklogBackupDocument(
             backup: BacklogBackup(
                 backlogList: BacklogListAll.loadFromStorage(database: database, legacyStore: legacyStore),
+                collectionSettings: CollectionSettings.loadFromStorage(database: database, legacyStore: legacyStore),
                 activityBacklogList: ActivityBacklogListAll.loadFromStorage(database: database, legacyStore: legacyStore),
                 buyItems: BuyListStorage.load(database: database, legacyStore: legacyStore)
             )
@@ -73,6 +95,7 @@ enum BacklogBackupTransfer {
         database: SQLiteStorage = .shared
     ) {
         BacklogListAll.saveToStorage(backlogList: document.backup.backlogList, database: database)
+        CollectionSettings.saveToStorage(settings: document.backup.collectionSettings, database: database)
         ActivityBacklogListAll.saveToStorage(backlogList: document.backup.activityBacklogList, database: database)
         BuyListStorage.save(document.backup.buyItems, database: database)
     }

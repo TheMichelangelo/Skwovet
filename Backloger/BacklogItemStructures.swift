@@ -60,29 +60,60 @@ final class BacklogList: Codable, Hashable, ObservableObject {
 }
 
 final class BacklogListAll: Codable, Hashable, ObservableObject {
+    var gameItems: BacklogList
     var bookItems: BacklogList
     var comicsItems: BacklogList
-    var playstationGameItems: BacklogList
-    var xboxGameItems: BacklogList
-    var switchGameItems: BacklogList
-    var pcGameItems: BacklogList
-    var activityItems: BacklogList
-    
+    var legoItems: BacklogList
+    var boardGameItems: BacklogList
+
+    private enum CodingKeys: String, CodingKey {
+        case gameItems
+        case bookItems
+        case comicsItems
+        case legoItems
+        case boardGameItems
+        case playstationGameItems
+        case xboxGameItems
+        case switchGameItems
+        case pcGameItems
+    }
+
     init() {
+        gameItems = BacklogList()
         bookItems = BacklogList()
         comicsItems = BacklogList()
-        playstationGameItems = BacklogList()
-        xboxGameItems = BacklogList()
-        switchGameItems = BacklogList()
-        pcGameItems = BacklogList()
-        activityItems = BacklogList()
+        legoItems = BacklogList()
+        boardGameItems = BacklogList()
     }
-    
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        gameItems = try container.decodeIfPresent(BacklogList.self, forKey: .gameItems)
+            ?? Self.mergeLegacyGameLists(from: container)
+        bookItems = try container.decodeIfPresent(BacklogList.self, forKey: .bookItems) ?? BacklogList()
+        comicsItems = try container.decodeIfPresent(BacklogList.self, forKey: .comicsItems) ?? BacklogList()
+        legoItems = try container.decodeIfPresent(BacklogList.self, forKey: .legoItems) ?? BacklogList()
+        boardGameItems = try container.decodeIfPresent(BacklogList.self, forKey: .boardGameItems) ?? BacklogList()
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(gameItems, forKey: .gameItems)
+        try container.encode(bookItems, forKey: .bookItems)
+        try container.encode(comicsItems, forKey: .comicsItems)
+        try container.encode(legoItems, forKey: .legoItems)
+        try container.encode(boardGameItems, forKey: .boardGameItems)
+    }
+
     static func == (lhs: BacklogListAll, rhs: BacklogListAll) -> Bool {
-        return lhs.bookItems == rhs.bookItems && lhs.comicsItems == rhs.comicsItems
-        && lhs.playstationGameItems == rhs.playstationGameItems && lhs.activityItems == rhs.activityItems
+        lhs.gameItems == rhs.gameItems
+            && lhs.bookItems == rhs.bookItems
+            && lhs.comicsItems == rhs.comicsItems
+            && lhs.legoItems == rhs.legoItems
+            && lhs.boardGameItems == rhs.boardGameItems
     }
-    
+
     static func loadFromStorage(
         database: SQLiteStorage = .shared,
         legacyStore: UserDefaults = .standard
@@ -101,26 +132,108 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
 
     func list(for category: Category) -> BacklogList {
         switch category {
-        case .comics:
-            return comicsItems
+        case .games:
+            return gameItems
         case .books:
             return bookItems
-        case .activities:
-            return activityItems
-        case .games_playstation:
-            return playstationGameItems
-        case .games_switch:
-            return switchGameItems
-        case .games_windows:
-            return pcGameItems
-        case .games_xbox:
-            return xboxGameItems
+        case .comics:
+            return comicsItems
+        case .lego:
+            return legoItems
+        case .boardGames:
+            return boardGameItems
         }
     }
 
     func hash(into hasher: inout Hasher) {
+        hasher.combine(gameItems)
         hasher.combine(bookItems)
         hasher.combine(comicsItems)
+        hasher.combine(legoItems)
+        hasher.combine(boardGameItems)
+    }
+
+    private static func mergeLegacyGameLists(from container: KeyedDecodingContainer<CodingKeys>) -> BacklogList {
+        let legacyLists = [
+            try? container.decodeIfPresent(BacklogList.self, forKey: .playstationGameItems),
+            try? container.decodeIfPresent(BacklogList.self, forKey: .xboxGameItems),
+            try? container.decodeIfPresent(BacklogList.self, forKey: .switchGameItems),
+            try? container.decodeIfPresent(BacklogList.self, forKey: .pcGameItems)
+        ]
+        .compactMap { $0 ?? nil }
+
+        guard !legacyLists.isEmpty else {
+            return BacklogList()
+        }
+
+        let merged = BacklogList()
+        merged.items = legacyLists
+            .flatMap(\.items)
+            .sorted { $0.task.localizedCaseInsensitiveCompare($1.task) == .orderedAscending }
+
+        if let current = legacyLists
+            .map(\.currentItem)
+            .first(where: { currentItem in merged.items.contains(where: { $0.id == currentItem.id }) }) {
+            merged.currentItem = current
+        } else if let firstOpen = merged.items.first(where: { !$0.complete }) {
+            merged.currentItem = firstOpen
+        }
+
+        return merged
+    }
+}
+
+final class CollectionSettings: Codable, Hashable, ObservableObject {
+    var selectedCategories: [Category]
+    var hasCompletedOnboarding: Bool
+
+    init(
+        selectedCategories: [Category] = [],
+        hasCompletedOnboarding: Bool = false
+    ) {
+        self.selectedCategories = Self.normalized(selectedCategories)
+        self.hasCompletedOnboarding = hasCompletedOnboarding
+    }
+
+    static func == (lhs: CollectionSettings, rhs: CollectionSettings) -> Bool {
+        lhs.selectedCategories == rhs.selectedCategories
+            && lhs.hasCompletedOnboarding == rhs.hasCompletedOnboarding
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(selectedCategories)
+        hasher.combine(hasCompletedOnboarding)
+    }
+
+    func applySelection(_ categories: [Category], completedOnboarding: Bool? = nil) {
+        selectedCategories = Self.normalized(categories)
+
+        if let completedOnboarding {
+            hasCompletedOnboarding = completedOnboarding
+        }
+    }
+
+    static func loadFromStorage(
+        database: SQLiteStorage = .shared,
+        legacyStore: UserDefaults = .standard
+    ) -> CollectionSettings {
+        loadCodableValue(
+            forKey: StorageKey.collectionSettings,
+            database: database,
+            legacyStore: legacyStore,
+            defaultValue: CollectionSettings()
+        )
+    }
+
+    static func saveToStorage(
+        settings: CollectionSettings,
+        database: SQLiteStorage = .shared
+    ) {
+        saveCodableValue(settings, forKey: StorageKey.collectionSettings, database: database)
+    }
+
+    private static func normalized(_ categories: [Category]) -> [Category] {
+        Category.allCases.filter { categories.contains($0) }
     }
 }
 
@@ -230,11 +343,11 @@ final class ActivityBacklogListAll: Codable, Hashable, ObservableObject {
     }
 }
 
-enum CompleteCategory: String, CaseIterable, Identifiable {
+enum CompleteCategory: String, CaseIterable, Identifiable, Codable {
     case completed, uncompleted
-    
+
     var id: Self { self }
-    
+
     var title: String {
         switch self {
         case .completed:
@@ -245,45 +358,137 @@ enum CompleteCategory: String, CaseIterable, Identifiable {
     }
 }
 
-enum Category: String, CaseIterable, Identifiable {
-    case games_playstation, games_xbox, games_switch, games_windows, comics, books, activities
+enum Category: String, CaseIterable, Identifiable, Codable {
+    case games
+    case books
+    case comics
+    case lego
+    case boardGames
+
     var id: Self { self }
-    
+
     var title: String {
         switch self {
-        case .games_playstation:
-            return "PlayStation"
-        case .games_xbox:
-            return "Xbox"
-        case .games_switch:
-            return "Switch"
-        case .games_windows:
-            return "PC"
-        case .comics:
-            return "Comics"
+        case .games:
+            return "Games"
         case .books:
             return "Books"
-        case .activities:
-            return "Activities"
+        case .comics:
+            return "Comics"
+        case .lego:
+            return "LEGO"
+        case .boardGames:
+            return "Board Games"
         }
     }
-    
+
     var symbolName: String {
         switch self {
-        case .games_playstation:
+        case .games:
             return "gamecontroller"
-        case .games_xbox:
-            return "gamecontroller.fill"
-        case .games_switch:
-            return "gamecontroller.circle"
-        case .games_windows:
-            return "desktopcomputer"
-        case .comics:
-            return "text.book.closed"
         case .books:
             return "books.vertical"
-        case .activities:
-            return "figure.run"
+        case .comics:
+            return "text.book.closed"
+        case .lego:
+            return "cube.transparent"
+        case .boardGames:
+            return "square.grid.3x3.topleft.filled"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .games:
+            return "Track what you want to play and what you already finished."
+        case .books:
+            return "Keep your reading list and mark books as read."
+        case .comics:
+            return "Follow comic runs and mark issues or volumes as read."
+        case .lego:
+            return "Track sets you want to build and what is already completed."
+        case .boardGames:
+            return "Keep board games organized by played and not played."
+        }
+    }
+
+    var addPlaceholder: String {
+        switch self {
+        case .games:
+            return "Add a game"
+        case .books:
+            return "Add a book"
+        case .comics:
+            return "Add a comic"
+        case .lego:
+            return "Add a LEGO set"
+        case .boardGames:
+            return "Add a board game"
+        }
+    }
+
+    var completedItemLabel: String {
+        switch self {
+        case .games, .boardGames:
+            return "Played"
+        case .books, .comics:
+            return "Read"
+        case .lego:
+            return "Built"
+        }
+    }
+
+    var openItemLabel: String {
+        switch self {
+        case .games, .boardGames:
+            return "Not played yet"
+        case .books, .comics:
+            return "Not read yet"
+        case .lego:
+            return "Not built yet"
+        }
+    }
+
+    var completionActionTitle: String {
+        switch self {
+        case .games, .boardGames:
+            return "Mark Played"
+        case .books, .comics:
+            return "Mark Read"
+        case .lego:
+            return "Mark Built"
+        }
+    }
+
+    var openSectionTitle: String {
+        switch self {
+        case .games:
+            return "To Play"
+        case .books, .comics:
+            return "To Read"
+        case .lego:
+            return "To Build"
+        case .boardGames:
+            return "Not Played Yet"
+        }
+    }
+
+    var completedSectionTitle: String {
+        completedItemLabel
+    }
+
+    var mainScreenTitle: String {
+        switch self {
+        case .games:
+            return "Game Collection"
+        case .books:
+            return "Book Collection"
+        case .comics:
+            return "Comic Collection"
+        case .lego:
+            return "LEGO Collection"
+        case .boardGames:
+            return "Board Game Collection"
         }
     }
 }
@@ -292,6 +497,7 @@ enum StorageKey {
     static let backlogList = "backlogList"
     static let activityBacklogList = "activityBacklogList"
     static let buyBacklogList = "buyBacklogList"
+    static let collectionSettings = "collectionSettings"
 }
 
 enum BuyListStorage {

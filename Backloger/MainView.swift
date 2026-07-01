@@ -8,22 +8,31 @@ import UniformTypeIdentifiers
 
 private enum Destination: Hashable {
     case day
-    case backlog
     case buy
+    case collection(Category)
 }
 
 struct MainView: View {
+    @State private var collectionSettings = CollectionSettings.loadFromStorage()
+    @State private var isShowingCategoryManager = false
     @State private var isImportingBackup = false
     @State private var isExportingBackup = false
     @State private var backupDocument = BacklogBackupTransfer.makeBackupDocument()
     @State private var transferMessage = ""
     @State private var isShowingTransferAlert = false
 
-    private let destinations: [(title: String, subtitle: String, icon: String, tint: Color, route: Destination)] = [
+    private let utilityDestinations: [(title: String, subtitle: String, icon: String, tint: Color, route: Destination)] = [
         ("Today", "Carry unfinished activities into a fresh daily plan.", "sun.max.fill", AppTheme.warmAccent, .day),
-        ("Backlog", "Track books, comics, games, and personal goals.", "square.stack.3d.up.fill", AppTheme.accent, .backlog),
-        ("Buy List", "Keep a clean shortlist of things worth picking up.", "bag.fill", AppTheme.secondaryAccent, .buy)
+        ("Buy List", "Keep a shortlist of things worth picking up next.", "bag.fill", AppTheme.secondaryAccent, .buy)
     ]
+
+    private var selectedCategories: [Category] {
+        collectionSettings.selectedCategories
+    }
+
+    private var needsFirstLaunchSelection: Bool {
+        !collectionSettings.hasCompletedOnboarding
+    }
 
     var body: some View {
         NavigationStack {
@@ -34,26 +43,14 @@ struct MainView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         ScreenTitle(
                             eyebrow: "Personal Tracker",
-                            title: "BackLogger",
-                            subtitle: "A calmer home for your backlog, daily focus, and things to buy."
+                            title: "My Collections",
+                            subtitle: "Choose what you collect once, then manage each collection from one home screen."
                         )
 
-                        heroCard
+                        collectionOverviewCard
+                        collectionsSection
+                        utilitySection
                         backupCard
-
-                        VStack(spacing: 14) {
-                            ForEach(destinations, id: \.title) { destination in
-                                NavigationLink(value: destination.route) {
-                                    HomeCard(
-                                        title: destination.title,
-                                        subtitle: destination.subtitle,
-                                        icon: destination.icon,
-                                        tint: destination.tint
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
@@ -63,11 +60,25 @@ struct MainView: View {
                 switch destination {
                 case .day:
                     DayView()
-                case .backlog:
-                    ContentView()
                 case .buy:
                     ShopListView()
+                case let .collection(category):
+                    ContentView(category: category)
                 }
+            }
+            .sheet(isPresented: $isShowingCategoryManager) {
+                CategorySelectionView(
+                    selectedCategories: collectionSettings.selectedCategories,
+                    isFirstLaunch: false,
+                    onSave: saveCategories(_:completedOnboarding:)
+                )
+            }
+            .fullScreenCover(isPresented: onboardingBinding) {
+                CategorySelectionView(
+                    selectedCategories: collectionSettings.selectedCategories,
+                    isFirstLaunch: true,
+                    onSave: saveCategories(_:completedOnboarding:)
+                )
             }
             .fileImporter(
                 isPresented: $isImportingBackup,
@@ -92,30 +103,104 @@ struct MainView: View {
         }
     }
 
-    private var heroCard: some View {
+    private var onboardingBinding: Binding<Bool> {
+        Binding(
+            get: { needsFirstLaunchSelection },
+            set: { _ in }
+        )
+    }
+
+    private var collectionOverviewCard: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
+            HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Keep momentum")
+                    Text("Your collection setup")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                    Text("The app is now organized around quick actions, softer hierarchy, and modern SwiftUI navigation.")
+                    Text(selectedCategories.isEmpty ? "Pick at least one category to get started." : "\(selectedCategories.count) categories active on your home screen.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
                 Spacer()
 
-                Image(systemName: "sparkles.rectangle.stack.fill")
+                Image(systemName: "square.grid.2x2.fill")
                     .font(.system(size: 28))
                     .foregroundStyle(AppTheme.accent)
             }
 
             HStack(spacing: 10) {
-                MetricPill(title: "App", value: "Local-first", tint: AppTheme.accent)
-                MetricPill(title: "Focus", value: "Simple routines", tint: AppTheme.secondaryAccent)
+                MetricPill(title: "Categories", value: "\(selectedCategories.count)", tint: AppTheme.accent)
+                MetricPill(title: "Mode", value: "Flexible", tint: AppTheme.secondaryAccent)
             }
+
+            Button {
+                isShowingCategoryManager = true
+            } label: {
+                Label(selectedCategories.isEmpty ? "Choose Categories" : "Add or Remove Categories", systemImage: "slider.horizontal.3")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.accent)
         }
         .glassCard()
+    }
+
+    private var collectionsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Collections")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Spacer()
+
+                Button("Manage") {
+                    isShowingCategoryManager = true
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.white.opacity(0.9))
+            }
+
+            if selectedCategories.isEmpty {
+                EmptyStateCard(
+                    systemImage: "square.stack.3d.up.slash",
+                    title: "No categories selected",
+                    message: "Add one or more collection types and they will appear here."
+                )
+            } else {
+                ForEach(selectedCategories) { category in
+                    NavigationLink(value: Destination.collection(category)) {
+                        HomeCard(
+                            title: category.mainScreenTitle,
+                            subtitle: category.subtitle,
+                            icon: category.symbolName,
+                            tint: AppTheme.accent
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var utilitySection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Other Lists")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+
+            ForEach(utilityDestinations, id: \.title) { destination in
+                NavigationLink(value: destination.route) {
+                    HomeCard(
+                        title: destination.title,
+                        subtitle: destination.subtitle,
+                        icon: destination.icon,
+                        tint: destination.tint
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 
     private var backupCard: some View {
@@ -160,6 +245,12 @@ struct MainView: View {
         .glassCard()
     }
 
+    private func saveCategories(_ categories: [Category], completedOnboarding: Bool) {
+        collectionSettings.applySelection(categories, completedOnboarding: completedOnboarding)
+        CollectionSettings.saveToStorage(settings: collectionSettings)
+        isShowingCategoryManager = false
+    }
+
     private func handleImport(_ result: Result<URL, Error>) {
         do {
             let url = try result.get()
@@ -172,7 +263,8 @@ struct MainView: View {
 
             let data = try Data(contentsOf: url)
             try BacklogBackupTransfer.importBackup(from: data)
-            transferMessage = "Backup imported successfully. Open any section again to see the restored data."
+            collectionSettings = CollectionSettings.loadFromStorage()
+            transferMessage = "Backup imported successfully. Open any collection again to see the restored data."
             isShowingTransferAlert = true
         } catch {
             transferMessage = "Import failed. Please choose a valid BackLogger JSON backup."
@@ -226,6 +318,122 @@ private struct HomeCard: View {
                 .foregroundStyle(.secondary)
         }
         .glassCard()
+    }
+}
+
+private struct CategorySelectionView: View {
+    let selectedCategories: [Category]
+    let isFirstLaunch: Bool
+    let onSave: ([Category], Bool) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var workingSelection: [Category]
+
+    init(
+        selectedCategories: [Category],
+        isFirstLaunch: Bool,
+        onSave: @escaping ([Category], Bool) -> Void
+    ) {
+        self.selectedCategories = selectedCategories
+        self.isFirstLaunch = isFirstLaunch
+        self.onSave = onSave
+        _workingSelection = State(initialValue: selectedCategories)
+    }
+
+    private var isSaveDisabled: Bool {
+        isFirstLaunch && workingSelection.isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppGradientBackground()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 22) {
+                        ScreenTitle(
+                            eyebrow: isFirstLaunch ? "First Launch" : "Manage Categories",
+                            title: "Choose Collections",
+                            subtitle: isFirstLaunch ? "Select everything you collect. You can choose more than one." : "Add or remove collection categories whenever your interests change."
+                        )
+
+                        VStack(spacing: 14) {
+                            ForEach(Category.allCases) { category in
+                                categoryButton(for: category)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    .padding(.vertical, 24)
+                }
+            }
+            .interactiveDismissDisabled(isFirstLaunch)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    if !isFirstLaunch {
+                        Button("Cancel") {
+                            dismiss()
+                        }
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(isFirstLaunch ? "Continue" : "Save") {
+                        onSave(workingSelection, true)
+                        dismiss()
+                    }
+                    .disabled(isSaveDisabled)
+                }
+            }
+        }
+    }
+
+    private func categoryButton(for category: Category) -> some View {
+        let isSelected = workingSelection.contains(category)
+
+        return Button {
+            toggle(category)
+        } label: {
+            HStack(spacing: 16) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill((isSelected ? AppTheme.secondaryAccent : AppTheme.accent).opacity(0.14))
+                        .frame(width: 56, height: 56)
+                    Image(systemName: category.symbolName)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundStyle(isSelected ? AppTheme.secondaryAccent : AppTheme.accent)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(category.title)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                    Text(category.subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundStyle(isSelected ? AppTheme.secondaryAccent : .secondary)
+            }
+            .glassCard()
+            .padding(.horizontal, 20)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func toggle(_ category: Category) {
+        if workingSelection.contains(category) {
+            workingSelection.removeAll { $0 == category }
+        } else {
+            workingSelection.append(category)
+        }
+
+        workingSelection = Category.allCases.filter { workingSelection.contains($0) }
     }
 }
 
