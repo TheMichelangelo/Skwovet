@@ -14,6 +14,7 @@ BackLogger is a local-first iOS app for tracking:
 - Modern SwiftUI navigation and refreshed visual design
 - On-device persistence with `UserDefaults`
 - Automated GitHub Actions build-and-test workflow on pushes to `main`
+- Deployment target set to `iOS 18.0`
 
 ## Storage
 
@@ -38,6 +39,7 @@ The repository includes:
 - a GitHub Actions workflow at `.github/workflows/ios-ci.yml`
 
 The workflow builds the app and runs tests on pushes to `main`.
+It selects the first available iPhone simulator on the runner instead of relying on one hard-coded device name.
 
 ## Future Work
 

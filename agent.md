@@ -15,7 +15,7 @@ The app keeps its data on-device with `UserDefaults`. There is no backend, sync 
 - Xcode project: `Backloger.xcodeproj`
 - UI framework: SwiftUI
 - language: Swift 5
-- deployment target: `iOS 27.0`
+- deployment target: `iOS 18.0`
 
 ## Repo Layout
 
@@ -76,6 +76,7 @@ This includes:
 - Shared logic lives in helper types such as `BacklogLogic`, `DayLogic`, and `BuyListLogic`
 - GitHub Actions workflow lives at `.github/workflows/ios-ci.yml`
 - The repo now includes a shared scheme at `Backloger.xcodeproj/xcshareddata/xcschemes/Backloger.xcscheme`
+- CI selects the first available iPhone simulator on the runner instead of depending on one fixed simulator name
 
 If CI behavior changes, update both this file and `README.md`.
 
@@ -96,7 +97,7 @@ Typical local verification commands:
 
 ```bash
 xcodebuild -list -project Backloger.xcodeproj
-xcodebuild test -project Backloger.xcodeproj -scheme Backloger -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild test -project Backloger.xcodeproj -scheme Backloger -destination 'platform=iOS Simulator,name=<available iPhone simulator>'
 ```
 
 In the current local environment, `xcodebuild` could not be run because the active developer directory points to Command Line Tools instead of a full Xcode app.

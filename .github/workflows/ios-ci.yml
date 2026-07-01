@@ -17,10 +17,20 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: Select available iPhone simulator
+        id: simulator
+        run: |
+          DEVICE_NAME=$(xcrun simctl list devices available | grep -m 1 "iPhone" | sed -E 's/^[[:space:]]*([^()]+) \(.*/\1/' | xargs)
+          if [ -z "$DEVICE_NAME" ]; then
+            echo "No available iPhone simulator found"
+            exit 1
+          fi
+          echo "device_name=$DEVICE_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Build and test
         run: |
           xcodebuild test \
             -project Backloger.xcodeproj \
             -scheme Backloger \
-            -destination "platform=iOS Simulator,OS=latest,name=iPhone 16" \
+            -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.device_name }}" \
             CODE_SIGNING_ALLOWED=NO
