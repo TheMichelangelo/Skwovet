@@ -65,6 +65,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
     var comicsItems: BacklogList
     var legoItems: BacklogList
     var boardGameItems: BacklogList
+    var activityCollectionItems: BacklogList
+    var miniaturePaintingItems: BacklogList
 
     private enum CodingKeys: String, CodingKey {
         case gameItems
@@ -72,6 +74,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         case comicsItems
         case legoItems
         case boardGameItems
+        case activityCollectionItems
+        case miniaturePaintingItems
         case playstationGameItems
         case xboxGameItems
         case switchGameItems
@@ -84,6 +88,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         comicsItems = BacklogList()
         legoItems = BacklogList()
         boardGameItems = BacklogList()
+        activityCollectionItems = BacklogList()
+        miniaturePaintingItems = BacklogList()
     }
 
     init(from decoder: Decoder) throws {
@@ -95,6 +101,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         comicsItems = try container.decodeIfPresent(BacklogList.self, forKey: .comicsItems) ?? BacklogList()
         legoItems = try container.decodeIfPresent(BacklogList.self, forKey: .legoItems) ?? BacklogList()
         boardGameItems = try container.decodeIfPresent(BacklogList.self, forKey: .boardGameItems) ?? BacklogList()
+        activityCollectionItems = try container.decodeIfPresent(BacklogList.self, forKey: .activityCollectionItems) ?? BacklogList()
+        miniaturePaintingItems = try container.decodeIfPresent(BacklogList.self, forKey: .miniaturePaintingItems) ?? BacklogList()
     }
 
     func encode(to encoder: Encoder) throws {
@@ -104,6 +112,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         try container.encode(comicsItems, forKey: .comicsItems)
         try container.encode(legoItems, forKey: .legoItems)
         try container.encode(boardGameItems, forKey: .boardGameItems)
+        try container.encode(activityCollectionItems, forKey: .activityCollectionItems)
+        try container.encode(miniaturePaintingItems, forKey: .miniaturePaintingItems)
     }
 
     static func == (lhs: BacklogListAll, rhs: BacklogListAll) -> Bool {
@@ -112,6 +122,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
             && lhs.comicsItems == rhs.comicsItems
             && lhs.legoItems == rhs.legoItems
             && lhs.boardGameItems == rhs.boardGameItems
+            && lhs.activityCollectionItems == rhs.activityCollectionItems
+            && lhs.miniaturePaintingItems == rhs.miniaturePaintingItems
     }
 
     static func loadFromStorage(
@@ -142,6 +154,10 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
             return legoItems
         case .boardGames:
             return boardGameItems
+        case .activities:
+            return activityCollectionItems
+        case .miniaturePainting:
+            return miniaturePaintingItems
         }
     }
 
@@ -151,6 +167,8 @@ final class BacklogListAll: Codable, Hashable, ObservableObject {
         hasher.combine(comicsItems)
         hasher.combine(legoItems)
         hasher.combine(boardGameItems)
+        hasher.combine(activityCollectionItems)
+        hasher.combine(miniaturePaintingItems)
     }
 
     private static func mergeLegacyGameLists(from container: KeyedDecodingContainer<CodingKeys>) -> BacklogList {
@@ -353,6 +371,8 @@ enum Category: String, CaseIterable, Identifiable, Codable {
     case comics
     case lego
     case boardGames
+    case activities
+    case miniaturePainting
 
     var id: Self { self }
 
@@ -368,6 +388,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "LEGO"
         case .boardGames:
             return "Board Games"
+        case .activities:
+            return "Activities"
+        case .miniaturePainting:
+            return "Miniature Painting"
         }
     }
 
@@ -383,6 +407,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "cube.transparent"
         case .boardGames:
             return "square.grid.3x3.topleft.filled"
+        case .activities:
+            return "figure.walk"
+        case .miniaturePainting:
+            return "paintpalette"
         }
     }
 
@@ -398,6 +426,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "Track sets you want to build and what is already completed."
         case .boardGames:
             return "Keep board games organized by played and not played."
+        case .activities:
+            return "Track activities you want to try and the ones you already finished."
+        case .miniaturePainting:
+            return "Keep miniature painting projects organized from unpainted to finished."
         }
     }
 
@@ -413,6 +445,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "Add a LEGO set"
         case .boardGames:
             return "Add a board game"
+        case .activities:
+            return "Add an activity"
+        case .miniaturePainting:
+            return "Add a miniature project"
         }
     }
 
@@ -424,6 +460,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "Read"
         case .lego:
             return "Built"
+        case .activities:
+            return "Done"
+        case .miniaturePainting:
+            return "Painted"
         }
     }
 
@@ -435,6 +475,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "Not read yet"
         case .lego:
             return "Not built yet"
+        case .activities:
+            return "Not done yet"
+        case .miniaturePainting:
+            return "Not painted yet"
         }
     }
 
@@ -446,6 +490,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "Mark Read"
         case .lego:
             return "Mark Built"
+        case .activities:
+            return "Mark Done"
+        case .miniaturePainting:
+            return "Mark Painted"
         }
     }
 
@@ -459,6 +507,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "To Build"
         case .boardGames:
             return "Not Played Yet"
+        case .activities:
+            return "To Do"
+        case .miniaturePainting:
+            return "To Paint"
         }
     }
 
@@ -478,6 +530,10 @@ enum Category: String, CaseIterable, Identifiable, Codable {
             return "LEGO Collection"
         case .boardGames:
             return "Board Games"
+        case .activities:
+            return "Activities"
+        case .miniaturePainting:
+            return "Miniature Painting"
         }
     }
 }

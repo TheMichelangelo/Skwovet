@@ -7,6 +7,8 @@ final class BacklogLogicTests: XCTestCase {
         XCTAssertEqual(Category.games.symbolName, "gamecontroller")
         XCTAssertEqual(Category.lego.completionActionTitle, "Mark Built")
         XCTAssertEqual(Category.boardGames.mainScreenTitle, "Board Games")
+        XCTAssertEqual(Category.activities.openSectionTitle, "To Do")
+        XCTAssertEqual(Category.miniaturePainting.completedItemLabel, "Painted")
         XCTAssertEqual(CompleteCategory.uncompleted.title, "Open")
     }
 
@@ -46,11 +48,17 @@ final class BacklogLogicTests: XCTestCase {
         let allLists = BacklogListAll()
         let games = BacklogItem(task: "Zelda")
         let comics = BacklogItem(task: "Comic")
+        let activity = BacklogItem(task: "Kayaking")
+        let miniature = BacklogItem(task: "Space Marine Captain")
         allLists.gameItems.items = [games]
         allLists.comicsItems.items = [comics]
+        allLists.activityCollectionItems.items = [activity]
+        allLists.miniaturePaintingItems.items = [miniature]
 
         XCTAssertEqual(allLists.list(for: .games).items.first?.task, "Zelda")
         XCTAssertEqual(allLists.list(for: .comics).items.first?.task, "Comic")
+        XCTAssertEqual(allLists.list(for: .activities).items.first?.task, "Kayaking")
+        XCTAssertEqual(allLists.list(for: .miniaturePainting).items.first?.task, "Space Marine Captain")
     }
 
     func testFilteredItemsAndCompletionRatioReflectCompletionState() {

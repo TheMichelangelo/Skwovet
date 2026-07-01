@@ -28,12 +28,16 @@ final class StorageAndDayLogicTests: XCTestCase {
         let allLists = BacklogListAll()
         allLists.gameItems.items = [BacklogItem(task: "Mass Effect")]
         allLists.bookItems.items = [BacklogItem(task: "Dune")]
+        allLists.activityCollectionItems.items = [BacklogItem(task: "Hiking")]
+        allLists.miniaturePaintingItems.items = [BacklogItem(task: "Goblin Shaman")]
 
         BacklogListAll.saveToStorage(backlogList: allLists, database: database)
         let loaded = BacklogListAll.loadFromStorage(database: database)
 
         XCTAssertEqual(loaded.gameItems.items.map(\.task), ["Mass Effect"])
         XCTAssertEqual(loaded.bookItems.items.map(\.task), ["Dune"])
+        XCTAssertEqual(loaded.activityCollectionItems.items.map(\.task), ["Hiking"])
+        XCTAssertEqual(loaded.miniaturePaintingItems.items.map(\.task), ["Goblin Shaman"])
     }
 
     func testCollectionSettingsRoundTripPersistsSelection() {
